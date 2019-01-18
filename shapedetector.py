@@ -46,8 +46,8 @@ def detect_shapes():
 
     # Here we use an adaptive threshold on the image, since we expect the lighting to be non-uniform.
     thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 0)
-    # cv2.imshow("thresh", thresh)
-    # cv2.waitKey(0)
+    cv2.imshow("thresh", thresh)
+    cv2.waitKey(0)
 
     num_shapes = {}
 
@@ -57,19 +57,20 @@ def detect_shapes():
     for c in cnts:
         # compute centroid of the contour as it would be on the original image
         M = cv2.moments(c)
-        cx = int((M["m10"] / M["m00"]) * ratio)
-        cy = int((M["m01"] / M["m00"]) * ratio)
-        shape = sd.detect(c)
-        add_shape(shape, num_shapes)
+        if c.shape[0] > 2:  # ignore contours that can't possibly be closed
+            cx = int((M["m10"] / M["m00"]) * ratio) if M['m00'] != 0 else 0
+            cy = int((M["m01"] / M["m00"]) * ratio) if M['m00'] != 0 else 0
+            shape = sd.detect(c)
+            add_shape(shape, num_shapes)
 
-        c = c.astype(float)
-        c = c*ratio
-        c = c.astype(int)
-        cv2.drawContours(image, [c], -1, (255, 0, 0), 2)
-        cv2.putText(image, shape, (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
+            c = c.astype(float)
+            c = c*ratio
+            c = c.astype(int)
+            cv2.drawContours(image, [c], -1, (255, 0, 0), 2)
+            cv2.putText(image, shape, (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
 
-        cv2.imshow("Image", image)
-        cv2.waitKey(0)
+            cv2.imshow("Image", image)
+            cv2.waitKey(0)
 
     return num_shapes
 
