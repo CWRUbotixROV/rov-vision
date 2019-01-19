@@ -18,8 +18,9 @@ class ShapeDetector:
         elif len(approx)==4:    # could be square or line
             (x, y, w, h) = cv2.boundingRect(approx)
             ar = w/float(h)
+            print(ar)
             area = cv2.contourArea(c)
-            if area/float(w*h) <= 0.4 or ar <= 0.9 or ar >= 1.1:
+            if area/float(w*h) <= 0.4 or ar <= 0.8 or ar >= 1/0.8:
                 shape = 'line'
             else:
                 shape = 'square'
@@ -37,7 +38,7 @@ def add_shape(shape, d):
 
 
 def detect_shapes():
-    image = cv2.imread('shapes.png', cv2.IMREAD_COLOR)
+    image = cv2.imread('real_shapes.png', cv2.IMREAD_COLOR)
     resized = imutils.resize(image, width=300)  # resize to simplify shapes
     ratio = image.shape[0] / float(resized.shape[0])
 
@@ -55,9 +56,12 @@ def detect_shapes():
     sd = ShapeDetector()
 
     for c in cnts:
+        area = cv2.contourArea(c)
         # compute centroid of the contour as it would be on the original image
         M = cv2.moments(c)
-        if c.shape[0] > 2:  # ignore contours that can't possibly be closed
+
+        # ignore contours that are too small to be species
+        if c.shape[0] > 2 and area/(resized.shape[0]*resized.shape[1]) > 0.002:
             cx = int((M["m10"] / M["m00"]) * ratio) if M['m00'] != 0 else 0
             cy = int((M["m01"] / M["m00"]) * ratio) if M['m00'] != 0 else 0
             shape = sd.detect(c)
