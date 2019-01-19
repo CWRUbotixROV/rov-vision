@@ -69,9 +69,11 @@ def detect_shapes():
             cv2.drawContours(image, [c], -1, (255, 0, 0), 2)
             cv2.putText(image, shape, (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
 
-            cv2.imshow("Image", image)
-            cv2.waitKey(0)
+            # cv2.imshow("Image", image)
+            # cv2.waitKey(0)
 
+    cv2.imshow("Image", image)
+    cv2.waitKey(0)
     return num_shapes
 
 
