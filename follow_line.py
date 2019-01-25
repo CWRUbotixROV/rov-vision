@@ -41,6 +41,8 @@ while(True):
         if cv2.contourArea(hull)/cv2.contourArea(cnt) > 2.5:     # has a bend in it
             print("Looks like a turn")
         # cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        else:
+            print('Keep going')
 
         cv2.drawContours(img, [hull], 0, (0, 255, 0), 2)
         cv2.drawContours(img, [cnt], 0, (255, 0, 0), 2)

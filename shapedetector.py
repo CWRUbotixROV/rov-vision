@@ -77,6 +77,7 @@ def detect_shapes():
             # cv2.waitKey(0)
 
     cv2.imshow("Image", image)
+    # cv2.imwrite('image.png', image)
     cv2.waitKey(0)
     return num_shapes
 
