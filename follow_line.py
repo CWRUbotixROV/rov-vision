@@ -2,6 +2,8 @@
 import cv2, time, subprocess
 import numpy as np
 from pymavlink import mavutil
+import gi
+from video import Video
 
 # RC channel IDs (constants)
 RC_CHAN_PITCH = 1
@@ -49,7 +51,8 @@ master = mavutil.mavlink_connection('udpin:192.168.2.1:14540')
 master.wait_heartbeat()
 master.mav.command_long_send(1, 1, 400, 0, 1, 0, 0, 0, 0, 0, 0)    # arm
 
-cap = cv2.VideoCapture(0)
+# cap = cv2.VideoCapture('udp://@192.168.2.1:4777')
+stream = Video(port=4777)
 
 img = None
 cnt_crack = None
@@ -57,12 +60,14 @@ found = False
 last_time = 0
 
 while(True):
-    retval, img = cap.read()
+    if not stream.frame_available():
+        continue
+    img = stream.frame()
 
     new_time = time.time()
-    print(new_time-last_time)
+    print(1/float(new_time-last_time))  # update rate, for debugging
     last_time = new_time
-    
+
     # img = cv2.imread('/home/sam/Pictures/screwdriver.jpg')
     # img = cv2.GaussianBlur(img, (5, 5), 0)
     lower_red = np.array([0, 0, 50])
@@ -113,7 +118,7 @@ while(True):
     else:
         print('No red line found')
 
-    # cv2.imshow('image', img)
+    cv2.imshow('image', img)
     if (cv2.waitKey(1) & 0xFF == ord('q')) or found:
         break
 
