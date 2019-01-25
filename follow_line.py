@@ -1,14 +1,68 @@
-import cv2
+#! /usr/bin/env python3
+import cv2, time, subprocess
 import numpy as np
+from pymavlink import mavutil
+
+# RC channel IDs (constants)
+RC_CHAN_PITCH = 1
+RC_CHAN_ROLL = 2
+RC_CHAN_THROTTLE = 3
+RC_CHAN_YAW = 4
+RC_CHAN_FORWARD = 5
+RC_CHAN_LATERAL = 6
+
+# mavproxy.py --master=udpin:192.168.2.1:14540 --out=udpout:192.168.2.2:14540
+
+
+def set_rc_channel_pwm(id, pwm=1500):
+    """ Set RC channel pwm value
+    Args:
+        id (TYPE): Channel ID
+        pwm (int, optional): Channel pwm value 1100-1900
+    """
+    if id < 1:
+        return
+    if id < 9:
+        rc_channel_values = [65535 for _ in range(8)]
+        rc_channel_values[id-1] = pwm
+        master.mav.rc_channels_override_send(master.target_system, master.target_component, *rc_channel_values)
+
+
+def go_down():
+    set_rc_channel_pwm(RC_CHAN_THROTTLE, 1450)  # half speed, I think
+
+def go_up():
+    set_rc_channel_pwm(RC_CHAN_THROTTLE, 1550)
+
+def go_left():
+    set_rc_channel_pwm(RC_CHAN_LATERAL, 1450)
+
+def go_right():
+    set_rc_channel_pwm(RC_CHAN_LATERAL, 1550)
+
+def get_direction():
+    return
+
+master = mavutil.mavlink_connection('udpin:192.168.2.1:14540')
+# p = subprocess.Popen(['python3', 'follow_line.py'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+master.wait_heartbeat()
+master.mav.command_long_send(1, 1, 400, 0, 1, 0, 0, 0, 0, 0, 0)    # arm
 
 cap = cv2.VideoCapture(0)
 
 img = None
 cnt_crack = None
 found = False
+last_time = 0
 
 while(True):
     retval, img = cap.read()
+
+    new_time = time.time()
+    print(new_time-last_time)
+    last_time = new_time
+    
     # img = cv2.imread('/home/sam/Pictures/screwdriver.jpg')
     # img = cv2.GaussianBlur(img, (5, 5), 0)
     lower_red = np.array([0, 0, 50])
@@ -39,13 +93,15 @@ while(True):
         x, y, w, h = cv2.boundingRect(cnt)
         hull = cv2.convexHull(cnt)
         if cv2.contourArea(hull)/cv2.contourArea(cnt) > 2.5:     # has a bend in it
-            print("Looks like a turn")
+            # print("Looks like a turn")
+            go_left()
         # cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
         else:
-            print('Keep going')
+            # print('Keep going')
+            go_down()
 
-        cv2.drawContours(img, [hull], 0, (0, 255, 0), 2)
-        cv2.drawContours(img, [cnt], 0, (255, 0, 0), 2)
+        # cv2.drawContours(img, [hull], 0, (0, 255, 0), 2)
+        # cv2.drawContours(img, [cnt], 0, (255, 0, 0), 2)
         if len(contours_b) > 0:
             crack = max(contours_b, key=cv2.contourArea)
             # if cv2.contourArea(crack) > 1000:
@@ -57,7 +113,7 @@ while(True):
     else:
         print('No red line found')
 
-    cv2.imshow('image', img)
+    # cv2.imshow('image', img)
     if (cv2.waitKey(1) & 0xFF == ord('q')) or found:
         break
 

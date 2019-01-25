@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import time, subprocess
 from pymavlink import mavutil
@@ -41,14 +41,16 @@ def go_left():
 def go_right():
     set_rc_channel_pwm(RC_CHAN_LATERAL, 1550)
 
+def get_direction():
+    return
+
 master = mavutil.mavlink_connection('udpin:192.168.2.1:14540')
+# p = subprocess.Popen(['python3', 'follow_line.py'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
 master.wait_heartbeat()
 master.mav.command_long_send(1, 1, 400, 0, 1, 0, 0, 0, 0, 0, 0)    # arm
-set_rc_channel_pwm(RC_CHAN_FORWARD, 1450)
-time.sleep(3)
-set_rc_channel_pwm(RC_CHAN_FORWARD, 1500)
-master.mav.command_long_send(1, 1, 400, 0, 0, 0, 0, 0, 0, 0, 0)    # disarm
 
-# p = subprocess.Popen(['python3', 'follow_line.py'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-# out, err = p.communicate()
-# out = out.decode('ascii')
+# p = subprocess.Popen(['sl'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+# while p.poll() is None:
+#     output = p.stdout.readline()
+#     print(output)
