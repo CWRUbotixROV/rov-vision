@@ -53,6 +53,7 @@ master = mavutil.mavlink_connection('udpin:192.168.2.1:14540')
 # p = subprocess.Popen(['python3', 'follow_line.py'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 master.wait_heartbeat()
+# Should be armed manually from QGroundControl
 # master.mav.command_long_send(1, 1, 400, 0, 1, 0, 0, 0, 0, 0, 0)    # arm
 
 lf = LineFollower(4777)
