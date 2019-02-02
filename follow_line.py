@@ -6,6 +6,7 @@ cap = cv2.VideoCapture(0)
 img = None
 cnt_crack = None
 found = False
+direction = "down"
 
 while(True):
     retval, img = cap.read()
@@ -31,19 +32,86 @@ while(True):
     im_blue = cv2.cvtColor(im_blue, cv2.COLOR_BGR2GRAY)
 
     # find contours
-    im_red, contours_r, hierarchy_r = cv2.findContours(im_red, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    im_blue, contours_b, hierarchy_b = cv2.findContours(im_blue, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    contours_r, hierarchy_r = cv2.findContours(im_red, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    contours_b, hierarchy_b = cv2.findContours(im_blue, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
     if len(contours_r) > 0:
         cnt = max(contours_r, key=cv2.contourArea)    # find largest contour
         x, y, w, h = cv2.boundingRect(cnt)
-        hull = cv2.convexHull(cnt)
+        hull = cv2.convexHull(cnt) 
         if cv2.contourArea(hull)/cv2.contourArea(cnt) > 2.5:     # has a bend in it
-            print("Looks like a turn")
-        # cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            # print("Looks like a turn")
+             lines = cv2.HoughLinesP(im_red, 1, np.pi/180, 200, 20, 20)
+             x_values = []
+             y_values = []
+             for line in lines:
+                for x1,y1,x2,y2 in line:
+                    for group in x_values:
+                        x_avg = sum(group)/ float(len(group))
+                        if x1 < 1.2 * x_avg and x1 > 0.8 * x_avg:
+                            group.append(x1)
+                            break
+                    else:
+                        x_values.append([x2])
+                    for group in x_values:
+                        x_avg = sum(group)/ float(len(group))
+                        if x2 < 1.2 * x_avg and x2 > 0.8 * x_avg:
+                            group.append(x1)
+                            break
+                    else:
+                        x_values.append([x2])
+                    for group in y_values:
+                        y_avg = sum(group)/ float(len(group))
+                        if y1 < 1.2 * y_avg and y1 > 0.8 * y_avg:
+                            group.append(y1)
+                            break
+                    else:
+                        y_values.append([y1])
+                    for group in y_values:
+                        y_avg = sum(group)/ float(len(group))
+                        if y2 < 1.2 * x_avg and y2 > 0.8 * x_avg:
+                            group.append(y2)
+                            break
+                    else:
+                        y_values.append([y2])
+                    cv2.line(img,(x1,y1),(x2,y2),(0,255,0),2)
+             numBigX, numBigY, numSmallX, numSmallY = 0, 0, 0, 0
+             avgBigX, avgBigY, avgSmallX, avgSmallY = 0, 0, 0, 0
+             for group in x_values:
+                 if len(group) > numBigX:
+                     numSmallX = numBigX
+                     avgSmallX = avgBigX
+                     numBigX = len(group)
+                     avgBigX = sum(group)/numBigX
+                 else:
+                     if len(group) > numSmallX:
+                         numSmallX = len(group)
+                         avgSmallX = sum(group)/numSmallX
+             for group in y_values:
+                 if len(group) > numBigY:
+                     numSmallY = numBigY
+                     avgSmallY = avgBigY
+                     numBigY = len(group)
+                     avgBigY = sum(group)/numBigY
+                 else:
+                     if len(group) > numSmallY:
+                         numSmallY = len(group)
+                         avgSmallY = sum(group)/numSmallY
+             if avgBigX < avgSmallX and avgBigY < avgSmallY:
+                 print("Down Right turn")
+             if avgBigX >  avgSmallX and avgBigY < avgSmallY:
+                 print("Down Left turn")
+             if avgBigX > avgSmallX and avgBigY > avgSmallY:
+                 print("Up Left turn")
+             if avgBigX < avgSmallX and avgBigY > avgSmallY:
+                 print("Up Right turn")
 
-        cv2.drawContours(img, [hull], 0, (0, 255, 0), 2)
-        cv2.drawContours(img, [cnt], 0, (255, 0, 0), 2)
+
+
+        # cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+             
+        #cv2.drawContours(img, [hull], 0, (0, 255, 0), 2)
+        #cv2.drawContours(img, [cnt], 0, (255, 0, 0), 2)
         if len(contours_b) > 0:
             crack = max(contours_b, key=cv2.contourArea)
             # if cv2.contourArea(crack) > 1000:
