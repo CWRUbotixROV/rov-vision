@@ -52,7 +52,12 @@ def detect_shapes():
 
     num_shapes = {}
 
-    cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[1]
+    cnts_ = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = None
+    if cv2.__version__[0]=='3':
+        cnts = cnts_[1]
+    else:
+        cnts = cnts_[0]
     sd = ShapeDetector()
 
     for c in cnts:
@@ -77,6 +82,7 @@ def detect_shapes():
             # cv2.waitKey(0)
 
     cv2.imshow("Image", image)
+    # cv2.imwrite('image.png', image)
     cv2.waitKey(0)
     return num_shapes
 

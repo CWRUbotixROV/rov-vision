@@ -1,9 +1,7 @@
-import cv2, time, subprocess
-import numpy as np
+#! /usr/bin/env python3
+
+import time, subprocess
 from pymavlink import mavutil
-import gi
-from video import Video
-from line_follower import LineFollower
 
 # RC channel IDs (constants)
 RC_CHAN_PITCH = 1
@@ -30,6 +28,7 @@ def set_rc_channel_pwm(id, pwm=1500):
         master.mav.rc_channels_override_send(master.target_system, master.target_component, *rc_channel_values)
 
 
+# TODO implement positive control so the robot isn't moving unless it is actively told to
 def go_down():
     set_rc_channel_pwm(RC_CHAN_THROTTLE, 1450)  # half speed, I think
 
@@ -42,10 +41,6 @@ def go_left():
 def go_right():
     set_rc_channel_pwm(RC_CHAN_LATERAL, 1550)
 
-def stop():
-    for i in range(6):
-        set_rc_channel_pwm(i+1, 1500)
-
 def get_direction():
     return
 
@@ -53,13 +48,9 @@ master = mavutil.mavlink_connection('udpin:192.168.2.1:14540')
 # p = subprocess.Popen(['python3', 'follow_line.py'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 master.wait_heartbeat()
-# Should be armed manually from QGroundControl
-# master.mav.command_long_send(1, 1, 400, 0, 1, 0, 0, 0, 0, 0, 0)    # arm
+master.mav.command_long_send(1, 1, 400, 0, 1, 0, 0, 0, 0, 0, 0)    # arm
 
-lf = LineFollower(4777)
-
-while(True):    # run until stopped with Ctrl-C
-    direction = lf.next_direction()
-
-stop()
-master.mav.command_long_send(1, 1, 400, 0, 0, 0, 0, 0, 0, 0, 0) # disarm
+# p = subprocess.Popen(['sl'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+# while p.poll() is None:
+#     output = p.stdout.readline()
+#     print(output)
