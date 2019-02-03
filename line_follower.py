@@ -3,6 +3,25 @@ import numpy as np
 
 import gi, time
 from video import Video
+from enum import Enum
+
+class Direction(Enum):
+    UP = 1
+    DOWN = 2
+    LEFT = 3
+    RIGHT = 4
+    HOLD = 0
+
+def centerline(box):
+    """
+    Takes a bounding rectangle and return two things: the centerline as a line segment, and whether it is vertical.
+    """
+    x, y, w, h = box
+    if w >= h:
+        return np.array([[x, y+h/2], [x+w, y+h/2]]), False
+    else:
+        return np.array([[x+w/2, y], [x+w/2, y+h]]), True
+
 
 class LineFollower:
     stream = None
@@ -11,14 +30,21 @@ class LineFollower:
     found = False
     last_time = 0
     found = False
+    moving = Direction.STOP
 
     def __init__(self, port):
         self.stream = Video(port=port)
+
+    def set_moving(self, m):
+        self.moving = m
     
     def next_direction(self):
+        nextdir = Direction.STOP
+
         if not self.stream.frame_available():
-            return 'invalid'
+            return nextdir
         img = self.stream.frame()
+        height, width, _ = img.shape
 
         new_time = time.time()
         print(1/float(new_time-self.last_time))  # update rate, for debugging
@@ -38,8 +64,8 @@ class LineFollower:
         im_blue = cv2.bitwise_and(img, img, mask=mask_blue)
 
         # threshold
-        ret_r, im_red = cv2.threshold(im_red, 60, 255, cv2.THRESH_BINARY)
-        ret_b, im_blue = cv2.threshold(im_blue, 60, 255, cv2.THRESH_BINARY)
+        im_red = cv2.threshold(im_red, 60, 255, cv2.THRESH_BINARY)[1]
+        im_blue = cv2.threshold(im_blue, 60, 255, cv2.THRESH_BINARY)[1]
 
         # flatten so findContours doesn't get mad
         im_red = cv2.cvtColor(im_red, cv2.COLOR_BGR2GRAY)
@@ -56,19 +82,43 @@ class LineFollower:
             contours_b = cb[0]
 
         if len(contours_r) > 0:
-            cnt = max(contours_r, key=cv2.contourArea)    # find largest contour
-            x, y, w, h = cv2.boundingRect(cnt)
-            hull = cv2.convexHull(cnt)
-            if cv2.contourArea(hull)/cv2.contourArea(cnt) > 2.5:     # has a bend in it
-                print("Looks like a turn")
-                # go_left()
-            # cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
-            else:
-                print('Keep going')
-                # go_down()
+            biggest = max(contours_r, key=cv2.contourArea)
+            x, y, w, h = cv2.boundingRect(biggest)
+            if cv2.contourArea(biggest)/(x*y) > 2.5:    # this is a corner
+                # What we are doing is figuring out which quadrant the bounding box is in.
+                # This works because we know, from the rules on FOV, that corners will always be touching 
+                # two sides of the frame, so the distance between the bounding box and the side is 0. 
+                is_right = width-2*x-w < 0 
+                is_up = height-2*y-h >= 0
+                if is_right and is_up:
+                    if self.moving==Direction.DOWN: # can only be moving down or left to get this
+                        nextdir = Direction.RIGHT  if w/h>1 else Direction.DOWN
+                    elif self.moving==Direction.LEFT:
+                        nextdir = Direction.LEFT  if w/h>1 else Direction.UP
+                    else:
+                        nextdir = self.moving
+                elif is_right and not is_up:
+                    if self.moving==Direction.UP:
+                        nextdir = Direction.RIGHT  if w/h>1 else Direction.UP
+                    elif self.moving==Direction.LEFT:
+                        nextdir = Direction.LEFT  if w/h>1 else Direction.DOWN
+                    else:
+                        nextdir = self.moving
+                elif not is_right and is_up:
+                    if self.moving==Direction.DOWN:
+                        nextdir = Direction.LEFT  if w/h>1 else Direction.DOWN
+                    elif self.moving==Direction.RIGHT:
+                        nextdir = Direction.RIGHT  if w/h>1 else Direction.UP
+                    else:
+                        nextdir = self.moving
+                else:
+                    if self.moving==Direction.UP:
+                        nextdir = Direction.LEFT  if w/h>1 else Direction.UP
+                    elif self.moving==Direction.RIGHT:
+                        nextdir = Direction.RIGHT  if w/h>1 else Direction.DOWN
+                    else:
+                        nextdir = self.moving
 
-            # cv2.drawContours(img, [hull], 0, (0, 255, 0), 2)
-            # cv2.drawContours(img, [cnt], 0, (255, 0, 0), 2)
             if len(contours_b) > 0:
                 crack = max(contours_b, key=cv2.contourArea)
                 if cv2.contourArea(crack) > 1000:
@@ -78,8 +128,10 @@ class LineFollower:
                     self.cnt_crack = crack
                     self.found = True
         else:
-            print('No red line found')
-
+            nextdir = Direction.STOP
+        
+        return nextdir
+        
         # # Note: Showing the image makes the loop run a LOT slower
         # cv2.imshow('image', img)
         # if (cv2.waitKey(1) & 0xFF == ord('q')) or self.found:

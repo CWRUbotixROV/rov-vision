@@ -46,9 +46,6 @@ def stop():
     for i in range(6):
         set_rc_channel_pwm(i+1, 1500)
 
-def get_direction():
-    return
-
 master = mavutil.mavlink_connection('udpin:192.168.2.1:14540')
 # p = subprocess.Popen(['python3', 'follow_line.py'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -58,8 +55,10 @@ master.wait_heartbeat()
 
 lf = LineFollower(4777)
 
+direction = 'stop'
+
 while(True):    # run until stopped with Ctrl-C
-    direction = lf.next_direction()
+   direction = lf.next_direction()
 
 stop()
 master.mav.command_long_send(1, 1, 400, 0, 0, 0, 0, 0, 0, 0, 0) # disarm
