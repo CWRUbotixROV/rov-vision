@@ -3,7 +3,7 @@ import numpy as np
 from pymavlink import mavutil
 import gi
 from video import Video
-from line_follower import LineFollower
+from line_follower import LineFollower, Direction
 
 # RC channel IDs (constants)
 RC_CHAN_PITCH = 1
@@ -55,10 +55,28 @@ master.wait_heartbeat()
 
 lf = LineFollower(4777)
 
-direction = 'stop'
+direction = Direction.STOP
+period = 0.05   # loop period in seconds
+tn = 0
 
-while(True):    # run until stopped with Ctrl-C
-   direction = lf.next_direction()
+try:
+    while True:    # run until stopped with Ctrl-C
+        tn = tn + period
+        direction = lf.next_direction()
+        print(direction)
+        if direction == Direction.UP:
+            go_up()
+        elif direction == Direction.DOWN:
+            go_down()
+        elif direction == Direction.LEFT:
+            go_left()
+        elif direction == Direction.RIGHT:
+            go_right()
+        else:
+            stop()
+        time.sleep(tn-int(round(time.time()*1000)))
+except KeyboardInterrupt:
+    pass
 
 stop()
 master.mav.command_long_send(1, 1, 400, 0, 0, 0, 0, 0, 0, 0, 0) # disarm

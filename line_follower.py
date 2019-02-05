@@ -1,16 +1,22 @@
+"""
+Stuff for line following
+"""
+from enum import Enum
+import time
 import cv2
 import numpy as np
-
-import gi, time
 from video import Video
-from enum import Enum
+
 
 class Direction(Enum):
-    UP = 1
-    DOWN = 2
-    LEFT = 3
-    RIGHT = 4
-    HOLD = 0
+    """
+    Enum for directions
+    """
+    UP = "UP"
+    DOWN = "DOWN"
+    LEFT = "LEFT"
+    RIGHT = "RIGHT"
+    STOP = "STOP"
 
 def centerline(box):
     """
@@ -21,7 +27,6 @@ def centerline(box):
         return np.array([[x, y+h/2], [x+w, y+h/2]]), False
     else:
         return np.array([[x+w/2, y], [x+w/2, y+h]]), True
-
 
 class LineFollower:
     stream = None
@@ -74,7 +79,7 @@ class LineFollower:
         # find contours
         cr = cv2.findContours(im_red, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         cb = cv2.findContours(im_blue, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        if cv2.__version__[0]=='3':
+        if cv2.__version__[0] == '3':
             contours_r = cr[1]
             contours_b = cb[1]
         else:
@@ -84,12 +89,12 @@ class LineFollower:
         if len(contours_r) > 0:
             biggest = max(contours_r, key=cv2.contourArea)
             x, y, w, h = cv2.boundingRect(biggest)
+            is_right = width-2*x-w < 0 
+            is_up = height-2*y-h >= 0
             if cv2.contourArea(biggest)/(x*y) > 2.5:    # this is a corner
                 # What we are doing is figuring out which quadrant the bounding box is in.
                 # This works because we know, from the rules on FOV, that corners will always be touching 
                 # two sides of the frame, so the distance between the bounding box and the side is 0. 
-                is_right = width-2*x-w < 0 
-                is_up = height-2*y-h >= 0
                 if is_right and is_up:
                     if self.moving==Direction.DOWN: # can only be moving down or left to get this
                         nextdir = Direction.RIGHT  if w/h>1 else Direction.DOWN
@@ -127,8 +132,13 @@ class LineFollower:
                     cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
                     self.cnt_crack = crack
                     self.found = True
+        elif cv2.contourArea(biggest)/(x*y) > 1.2:
+            if h > w:
+                nextdir = Direction.UP if is_up else Direction.DOWN
+            else:
+                nextdir = Direction.RIGHT if is_right else Direction.LEFT
         else:
-            nextdir = Direction.STOP
+            nextdir = self.moving
         
         return nextdir
         
