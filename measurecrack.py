@@ -18,7 +18,26 @@ def measure_crack():
     
     cv2.imshow("mask", mask)
     cv2.waitKey(0)
-    cv2.imshow("blue", blue)
+    #cv2.imshow("blue", blue)
+    #cv2.waitKey(0)
+    
+    # Find contours
+    contours, hierarchy = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    img = cv2.drawContours(mask, contours, -1, (50,255,0), 3)
+    resized = imutils.resize(img, width=300)
+    cv2.imshow("contours", resized)
     cv2.waitKey(0)
     
-measure_crack()
+    # Find max area contour
+    maxc = 0
+    for c in contours:
+        if cv2.contourArea(c) > maxc:
+            maxc = c
+    
+    # Find minimum bounding rectangle
+    rect = cv2.minAreaRect(maxc)
+    width = rect[1][0]
+    height = rect[1][1]
+    return (height/width)*1.85
+    
+print(measure_crack())
