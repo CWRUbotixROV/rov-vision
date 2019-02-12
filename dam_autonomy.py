@@ -1,8 +1,5 @@
 import cv2, time, subprocess
-import numpy as np
 from pymavlink import mavutil
-import gi
-from video import Video
 from line_follower import LineFollower, Direction
 
 # RC channel IDs (constants)
