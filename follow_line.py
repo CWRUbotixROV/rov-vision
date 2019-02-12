@@ -53,7 +53,7 @@ master.wait_heartbeat()
 # Should be armed manually from QGroundControl
 # master.mav.command_long_send(1, 1, 400, 0, 1, 0, 0, 0, 0, 0, 0)    # arm
 
-lf = LineFollower(4777)
+lf = LineFollower(port=4777)
 
 direction = Direction.STOP
 period = 0.05   # loop period in seconds
