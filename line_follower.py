@@ -1,5 +1,5 @@
 """
-Stuff for line following
+Code for line following
 """
 from enum import Enum
 import cv2
@@ -19,13 +19,13 @@ class Direction(Enum):
 
 def centerline(box):
     """
-    Takes a bounding rectangle and return two things: the centerline as a line segment, and whether it is vertical.
+    Takes a bounding rectangle and return two things: the centerline as a line segment, 
+    and whether it is vertical.
     """
     x, y, w, h = box
     if w >= h:
         return np.array([[x, y+h/2], [x+w, y+h/2]]), False
-    else:
-        return np.array([[x+w/2, y], [x+w/2, y+h]]), True
+    return np.array([[x+w/2, y], [x+w/2, y+h]]), True
 
 
 class LineFollower:
@@ -46,11 +46,19 @@ class LineFollower:
             self.stream = Video(port=port)
 
     def set_moving(self, m):
-        self.moving = m
+        """
+        Set the value of the `moving` instance variable.
+        """
+        if m in Direction:
+            self.moving = m
 
     def handle_image(self, img, show=False):
         """
         Processes an image and returns the next direction for the ROV to move.
+
+        Arguments:
+            img: the OpenCV image to process
+            show (bool): whether to display the processed image
         """
         nextdir = Direction.STOP
         height, width, _ = img.shape
@@ -157,6 +165,9 @@ class LineFollower:
         #     return 'end'
     
     def next_direction(self):
+        """
+        Gives the next direction (from the Direction enum), determined from the video stream.
+        """
         nextdir = Direction.STOP
 
         if self.stream is None:

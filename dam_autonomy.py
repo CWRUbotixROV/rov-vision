@@ -15,6 +15,7 @@ RC_CHAN_LATERAL = 6
 
 def set_rc_channel_pwm(id, pwm=1500):
     """ Set RC channel pwm value
+
     Args:
         id (TYPE): Channel ID
         pwm (int, optional): Channel pwm value 1100-1900
@@ -53,11 +54,11 @@ master.wait_heartbeat()
 lf = LineFollower(port=4777)
 
 direction = Direction.STOP
-period = 0.05   # loop period in seconds
+period = 50   # loop period in milliseconds
 tn = 0
 
 try:
-    while True:    # run until stopped with Ctrl-C
+    while True:     # run until stopped with Ctrl-C
         tn = tn + period
         direction = lf.next_direction()
         print(direction)
@@ -71,7 +72,7 @@ try:
             go_right()
         else:
             stop()
-        time.sleep(tn-int(round(time.time()*1000)))
+        time.sleep(tn - int(round(time.time()*1000)))
 except KeyboardInterrupt:
     pass
 
