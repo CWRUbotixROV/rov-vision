@@ -8,7 +8,7 @@ class ShapeDetector:
     def detect(self, c):
         shape = 'unidentified'
         peri = cv2.arcLength(c, True)   # perimeter
-        approx = cv2.approxPolyDP(c, 0.04*peri, True)   # use RDP algorithm to simplify shape
+        approx = cv2.approxPolyDP(c, 0.02*peri, True)   # use RDP algorithm to simplify shape
 
         print(len(approx))
         if len(approx)==2:
@@ -43,10 +43,10 @@ def detect_shapes():
     ratio = image.shape[0] / float(resized.shape[0])
 
     gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    # blurred = cv2.GaussianBlur(gray, (5, 5), 0)
 
     # Here we use an adaptive threshold on the image, since we expect the lighting to be non-uniform.
-    thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 0)
+    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 0)
     cv2.imshow("thresh", thresh)
     cv2.waitKey(0)
 
