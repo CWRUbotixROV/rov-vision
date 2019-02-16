@@ -1,8 +1,17 @@
 import cv2, imutils
 import numpy as np
 
-def measure_crack():
-    image = cv2.imread('crack3.jpg', cv2.IMREAD_COLOR)
+def measure_crack(image):
+    #image = cv2.imread('crack3.jpg', cv2.IMREAD_COLOR)
+    
+    width, height = blue_rectangle(image)
+    
+    if height > width:
+        return (height/width)*1.85
+    else:
+        return (width/height)*1.85
+    	
+def blue_rectangle(image):
     # Convert BGR to HSV
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
@@ -38,13 +47,10 @@ def measure_crack():
     rect = cv2.minAreaRect(maxc)
     width = rect[1][0]
     height = rect[1][1]
-    if height > width:
-        return (height/width)*1.85
-    else:
-    	return (width/height)*1.85
+    return width, height
 
-def measure_crack2():
-    image = cv2.imread('crack4.jpg', cv2.IMREAD_COLOR)
+def measure_crack2(image):
+    #image = cv2.imread('crack5.jpg', cv2.IMREAD_COLOR)
     
     # define range of color in HSV
     lower = np.array([0,0,0])
@@ -62,21 +68,15 @@ def measure_crack2():
     # Threshold the HSV image to get only black colors
     mask = cv2.inRange(hsv, lower, upper)
     
-    resized = imutils.resize(mask, width=300)
+    resized = imutils.resize(mask, width=600)
     cv2.imshow("mask", resized)
     cv2.waitKey(0)
-
-    # Here we use an adaptive threshold on the image, since we expect the lighting to be non-uniform.
-    thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 0)
-    resized = imutils.resize(thresh, width=300)
-    #cv2.imshow("thresh", resized)
-    #cv2.waitKey(0)
     
     # Canny line detection
     edges = cv2.Canny(gray, 50, 150, apertureSize=3)
-    resized = imutils.resize(edges, width=300)
-    cv2.imshow("edges", resized)
-    cv2.waitKey(0)
+    resized = imutils.resize(edges, width=600)
+    #cv2.imshow("edges", resized)
+    #cv2.waitKey(0)
     
     lines = cv2.HoughLines(mask, 1, np.pi/180, 700)
     a,b,c = lines.shape
@@ -120,10 +120,10 @@ def measure_crack2():
         #print(str(x1) + "," + str(y1) + "," + str(x2) + "," + str(y2))
         #cv2.line(image, (x1, y1), (x2, y2), (0, 255, 0), 5)
     
-    print(left)
-    print(right)
-    print(top)
-    print(bottom)
+    #print(left)
+    #print(right)
+    #print(top)
+    #print(bottom)
     
     x1, y1 = intersect(top, left)
     x2, y2 = intersect(top, right)
@@ -136,18 +136,26 @@ def measure_crack2():
     cv2.line(image, (x3, y3), (x4, y4), (0, 255, 0), 5)
     
     
-    resized = imutils.resize(image, width=500)
+    resized = imutils.resize(image, width=600)
     cv2.imshow("lines", resized)
     cv2.waitKey(0)
     
-    # Find contours
-    contours, hierarchy = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    img = cv2.drawContours(image, contours, -1, (50,255,0), 3)
-    resized = imutils.resize(img, width=300)
-    #cv2.imshow("contours", resized)
-    #cv2.waitKey(0)
+    src = np.float32([[x1, y1], [x2, y2], [x3, y3], [x4, y4]])
+    dst = np.float32([[0, 0], [3000, 0], [0, 3000], [3000, 3000]])
+    matrix = cv2.getPerspectiveTransform(src, dst)
     
-    return 0
+    warped = cv2.warpPerspective(image, matrix, (3000, 3000))
+    
+    resized = imutils.resize(warped, width=600)
+    cv2.imshow("warped", resized)
+    cv2.waitKey(0)
+    
+    width, height = blue_rectangle(warped)
+    
+    if (width > height):
+        return width / 100
+    else:
+        return height / 100
     
 def intersect(lines1, lines2):
     xs = []
@@ -176,6 +184,9 @@ def intersect(lines1, lines2):
     meany = int(sum(ys) / len(ys))
     return meanx, meany
             
+image = cv2.imread('crack4.jpg', cv2.IMREAD_COLOR)
+print(measure_crack(image))
+print(measure_crack2(image))
 
-print(measure_crack2())
+
 
