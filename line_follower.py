@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from enum import Enum
+import sys
 
 class Direction(Enum):
     neutral = 0
@@ -14,22 +15,23 @@ class LineFollower:
     direction = Direction.down
     immediate_dir = Direction.down
     change_dir_count = 5
-    turn = 100
-    find_turn = True
+    turn = 1000000
+    find_turn = False
+    dir_change = []
     
     def determineDir(self, video):
         retval, img = video.read()
-        lower_red = np.array([0, 0, 50])
-        upper_red = np.array([80, 80, 255])
+        lower_red = np.array([0, 0, 100])
+        upper_red = np.array([60, 60, 255])
         lower_blue = np.array([50, 0, 0])
-        upper_blue = np.array([255, 50, 50])
+        upper_blue = np.array([255, 255, 255])
 
         # apply masks
         mask_red = cv2.inRange(img, lower_red, upper_red)
         mask_blue = cv2.inRange(img, lower_blue, upper_blue)
         im_red = cv2.bitwise_and(img, img, mask=mask_red)
         im_blue = cv2.bitwise_and(img, img, mask=mask_blue)
-
+        im_red = cv2.GaussianBlur(im_red,(5,5),0)
         # threshold
         ret_r, im_red = cv2.threshold(im_red, 60, 255, cv2.THRESH_BINARY)
         ret_b, im_blue = cv2.threshold(im_blue, 60, 255, cv2.THRESH_BINARY)
@@ -46,10 +48,14 @@ class LineFollower:
             cnt = max(contours_r, key=cv2.contourArea)    # find largest contour
             x, y, w, h = cv2.boundingRect(cnt)
             hull = cv2.convexHull(cnt) 
-            current_turn = cv2.contourArea(hull)/cv2.contourArea(cnt)
+            boundingRect = cv2.minAreaRect(hull)
+            boundingRect = cv2.boxPoints(boundingRect)
+            boundingRect = np.int0(boundingRect)
+            current_turn = cv2.contourArea(boundingRect)/cv2.contourArea(hull)
+            print(self.direction)
             if self.find_turn:     # has a bend in it
                 # print("Looks like a turn")
-                 lines = cv2.HoughLinesP(im_red, 1, np.pi/180, 200, 20, 20)
+                 lines = cv2.HoughLinesP(im_red, 1, np.pi/180, 500, 100, 20)
                  x_values = []
                  y_values = []
                  for line in lines:
@@ -82,7 +88,7 @@ class LineFollower:
                                 break
                         else:
                             y_values.append([y2])
-                        cv2.line(img,(x1,y1),(x2,y2),(0,255,0),2)
+                        # cv2.line(img,(x1,y1),(x2,y2),(0,255,0),2)
                  numBigX, numBigY, numSmallX, numSmallY = 0, 0, 0, 0
                  avgBigX, avgBigY, avgSmallX, avgSmallY = 0, 0, 0, 0
                  for group in x_values:
@@ -130,29 +136,35 @@ class LineFollower:
                      if self.direction == Direction.left:
                          next_direction = Direction.up
                      else:
-                         if self.direction == Direction.up:
-                            next_direction = Direction.up
+                         if self.direction == Direction.down:
+                            next_direction = Direction.right
                  if self.immediate_dir == next_direction:
                      self.change_dir_count -= 1
-                 if next_direction != Direction.neutral:
-                     self.immediate_dir = next_direction
+                 else:
+                    if next_direction != Direction.neutral and self.change_dir_count < 5:
+                        self.change_dir_count += 1
+                 if self.change_dir_count == 5:
+                    if next_direction != Direction.neutral:
+                        self.immediate_dir = next_direction
                  if self.change_dir_count == 0:
                      self.change_dir_count = 5
                      self.direction = self.immediate_dir
                      self.find_turn = False
                      self.turn = current_turn
-                 print(self.direction)
             else:
-                if current_turn > 1.8 * self.turn:
+                self.dir_change.append(current_turn)
+                if len(self.dir_change) > 5:
+                    self.dir_change.pop(0)
+                turn_avg = sum(self.dir_change)/len(self.dir_change)
+                if turn_avg > 1.3 * self.turn:
                     self.find_turn = True
                 else:
-                    if current_turn < 0.8 * self.turn:
-                        self.turn = current_turn
+                    if turn_avg < 0.8 * self.turn:
+                        self.turn = turn_avg
             #    print("Straight line")
             # cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2) 
                 cv2.drawContours(img, [hull], 0, (0, 255, 0), 2)
-                cv2.drawContours(img, [cnt], 0, (255, 0, 0), 2)
-
+                cv2.drawContours(img, [boundingRect], 0, (255, 0, 0), 2)
             if len(contours_b) > 0:
                 crack = max(contours_b, key=cv2.contourArea)
                 # if cv2.contourArea(crack) > 1000:
@@ -164,11 +176,11 @@ class LineFollower:
         else:
             print('No red line found')
 
-        cv2.imshow('image', img)
-        cv2.waitKey(10)
+        cv2.imshow('img', img)
+        cv2.waitKey(1)
 
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(sys.argv[1])
 follow = LineFollower()
 while(True):
     follow.determineDir(cap)
