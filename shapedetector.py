@@ -1,5 +1,6 @@
-import cv2, imutils
-
+import cv2
+import imutils
+import numpy as np
 
 class ShapeDetector:
     def __init__(self):
@@ -8,7 +9,7 @@ class ShapeDetector:
     def detect(self, c):
         shape = 'unidentified'
         peri = cv2.arcLength(c, True)   # perimeter
-        approx = cv2.approxPolyDP(c, 0.02*peri, True)   # use RDP algorithm to simplify shape
+        approx = cv2.approxPolyDP(c, 0.04*peri, True)   # use RDP algorithm to simplify shape
 
         print(len(approx))
         if len(approx)==2:
@@ -38,21 +39,22 @@ def add_shape(shape, d):
 
 
 def detect_shapes():
-    image = cv2.imread('real_shapes.png', cv2.IMREAD_COLOR)
+    image = cv2.imread('benthic_species_2.png', cv2.IMREAD_COLOR)
     resized = imutils.resize(image, width=300)  # resize to simplify shapes
     ratio = image.shape[0] / float(resized.shape[0])
-
+    edges = cv2.Canny(image,100,200)
+    
     gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-    # blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
 
     # Here we use an adaptive threshold on the image, since we expect the lighting to be non-uniform.
-    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 0)
-    cv2.imshow("thresh", thresh)
+    ret, otsu = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    cv2.imshow("otsu", otsu)
     cv2.waitKey(0)
 
     num_shapes = {}
 
-    cnts_ = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts_ = cv2.findContours(otsu.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cnts = None
     if cv2.__version__[0]=='3':
         cnts = cnts_[1]
