@@ -60,33 +60,37 @@ class LineFollower:
                  y_values = []
                  for line in lines:
                     for x1,y1,x2,y2 in line:
+                        found1 = False
+                        found2 = False
                         for group in x_values:
                             x_avg = sum(group)/ float(len(group))
-                            if x1 < 1.2 * x_avg and x1 > 0.8 * x_avg:
+                            if x1 < 1.2 * x_avg and x1 > 0.8 * x_avg and not found1:
                                 group.append(x1)
+                                found1 = True 
+                            if x2 < 1.2 * x_avg and x2 > 0.8 * x_avg and not found2:
+                                group.append(x2)
+                                found2 = True
+                            if found1 and found2:
                                 break
-                        else:
+                        if not found1:
+                            x_values.append([x1])
+                        if not found2:
                             x_values.append([x2])
-                        for group in x_values:
-                            x_avg = sum(group)/ float(len(group))
-                            if x2 < 1.2 * x_avg and x2 > 0.8 * x_avg:
-                                group.append(x1)
-                                break
-                        else:
-                            x_values.append([x2])
+                        found1 = False
+                        found2 = False
                         for group in y_values:
                             y_avg = sum(group)/ float(len(group))
-                            if y1 < 1.2 * y_avg and y1 > 0.8 * y_avg:
+                            if y1 < 1.2 * y_avg and y1 > 0.8 * y_avg and not found1:
                                 group.append(y1)
-                                break
-                        else:
-                            y_values.append([y1])
-                        for group in y_values:
-                            y_avg = sum(group)/ float(len(group))
-                            if y2 < 1.2 * x_avg and y2 > 0.8 * x_avg:
+                                found1 = True
+                            if y2 < 1.2 * y_avg and y2 > 0.8 * y_avg and not found2:
                                 group.append(y2)
+                                found2 = True
+                            if found1 and found2:
                                 break
-                        else:
+                        if not found1:
+                            y_values.append([y1])
+                        if not found2:
                             y_values.append([y2])
                         # cv2.line(img,(x1,y1),(x2,y2),(0,255,0),2)
                  numBigX, numBigY, numSmallX, numSmallY = 0, 0, 0, 0
@@ -176,7 +180,7 @@ class LineFollower:
         else:
             print('No red line found')
 
-        cv2.imshow('img', img)
+        #cv2.imshow('img', img)
         cv2.waitKey(1)
 
 
