@@ -1,15 +1,21 @@
 """
 BlueRov video capture class.
 Code is from ardusub.com.
+
+NOTE 2/28/2019: The Conda packages for gstreamer do not include the udp plugin, so if you try to run 
+this code in a Conda environment, you're going to get a "No element named 'udpsrc'" error. To fix this,
+run the following:
+    export GST_PLUGIN_PATH_1_0="/usr/lib/x86_64-linux-gnu/gstreamer-1.0/:$GST_PLUGIN_PATH_1_0"
+(The path may differ; run gst-inspect-1.0 udpsrc *outside* Conda to find the plugin directory)
+This will add your system Gstreamer packages to the Conda gstreamer, and the Debian gstreamer1.0-plugins-good
+package contains the udp plugin.
 """
 
-import cv2
 import gi
 import numpy as np
 
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst
-
 
 class Video():
     """BlueRov video capture class constructor
