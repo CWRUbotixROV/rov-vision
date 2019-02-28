@@ -39,7 +39,7 @@ def add_shape(shape, d):
 
 
 def detect_shapes():
-    image = cv2.imread('benthic_species_2.png', cv2.IMREAD_COLOR)
+    image = cv2.imread('benthic_species_1.png', cv2.IMREAD_COLOR)
     resized = imutils.resize(image, width=300)  # resize to simplify shapes
     ratio = image.shape[0] / float(resized.shape[0])
     edges = cv2.Canny(image,100,200)
@@ -54,7 +54,7 @@ def detect_shapes():
 
     num_shapes = {}
 
-    cnts_ = cv2.findContours(otsu.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts_ = cv2.findContours(otsu.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
     cnts = None
     if cv2.__version__[0]=='3':
         cnts = cnts_[1]
@@ -68,7 +68,7 @@ def detect_shapes():
         M = cv2.moments(c)
 
         # ignore contours that are too small to be species
-        if c.shape[0] > 2 and area/(resized.shape[0]*resized.shape[1]) > 0.002:
+        if c.shape[0] > 2 and area/(resized.shape[0]*resized.shape[1]) > 0.002 and area/(resized.shape[0]*resized.shape[1]) < 0.25:
             cx = int((M["m10"] / M["m00"]) * ratio) if M['m00'] != 0 else 0
             cy = int((M["m01"] / M["m00"]) * ratio) if M['m00'] != 0 else 0
             shape = sd.detect(c)
