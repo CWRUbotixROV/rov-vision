@@ -9,6 +9,9 @@ run the following:
 (The path may differ; run gst-inspect-1.0 udpsrc *outside* Conda to find the plugin directory)
 This will add your system Gstreamer packages to the Conda gstreamer, and the Debian gstreamer1.0-plugins-good
 package contains the udp plugin.
+
+NOTE 3/19/2019: You also need to make sure that gst-python is installed from conda-forge, or you'll get the
+"Namespace Gst not available" error.
 """
 
 import gi
