@@ -69,7 +69,7 @@ class LineFollower:
             boundingRect = cv2.boxPoints(boundingRect)
             boundingRect = np.int0(boundingRect)
             current_turn = cv2.contourArea(boundingRect)/cv2.contourArea(hull)
-            print(direction)
+            print(self.direction)
             if self.find_turn:     # looking for turn
                  x_values = []
                  y_values = []
