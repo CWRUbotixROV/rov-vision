@@ -14,7 +14,7 @@ class LineFollower:
 
     direction = Direction.neutral    
     immediate_dir = Direction.neutral  # currently registered direction
-    next_dir = Direction.down   # will be direction when turn decreases    
+    next_dir = Direction.neutral   # will be direction when turn decreases    
     change_dir_count = 5        # number of registerd turns needed to change direction
     turn = 1000000              # threshold for average of dir_change to determine a turn
     find_turn = False           # true when program is currently determining a turn direction
@@ -38,10 +38,22 @@ class LineFollower:
         im_red = cv2.cvtColor(im_red, cv2.COLOR_BGR2GRAY)
         return img, im_red
 
+    def getDir(self):
+        return self.direction
+
     def findStartDir(self, video):
         img, im_red = self.prepareImgRed(video)
         contours_r, hierarchy_r = cv2.findContours(im_red, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         cnt = max(contours_r, key=cv2.contourArea)    # find largest contour
+        hull = cv2.convexHull(cnt)
+        (x,y), (MA,ma), angle = cv2.fitEllipse(hull)
+        print(angle)
+        if(angle < 45):
+            self.direction = Direction.down
+            self.next_dir = Direction.down
+        else:
+            self.direction = Direction.right
+            self.next_dir = Direction.right
 
     def determineDir(self, video):
         img, im_red = self.prepareImgRed(video)
