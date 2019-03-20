@@ -15,10 +15,11 @@ class LineFollower:
     direction = Direction.neutral    
     immediate_dir = Direction.neutral  # currently registered direction
     next_dir = Direction.neutral   # will be direction when turn decreases    
-    change_dir_count = 5        # number of registerd turns needed to change direction
+    change_dir_count = 3        # number of registerd turns needed to change direction
     turn = 1000000              # threshold for average of dir_change to determine a turn
     find_turn = False           # true when program is currently determining a turn direction
     dir_change = []             # queue of bounding rect area/hull area from previous five images    
+    is_moving = True            # determines when line_following stops
     
     def prepareImgRed(self, video):
         retval, img = video.read()
@@ -47,7 +48,6 @@ class LineFollower:
         cnt = max(contours_r, key=cv2.contourArea)    # find largest contour
         hull = cv2.convexHull(cnt)
         (x,y), (MA,ma), angle = cv2.fitEllipse(hull)
-        print(angle)
         if(angle < 45):
             self.direction = Direction.down
             self.next_dir = Direction.down
@@ -69,7 +69,6 @@ class LineFollower:
             boundingRect = cv2.boxPoints(boundingRect)
             boundingRect = np.int0(boundingRect)
             current_turn = cv2.contourArea(boundingRect)/cv2.contourArea(hull)
-            print(self.direction)
             if self.find_turn:     # looking for turn
                  x_values = []
                  y_values = []
@@ -77,7 +76,7 @@ class LineFollower:
                     found = False
                     for group in x_values:
                         x_avg = sum(group)/ float(len(group))
-                        if x < 1.4 * x_avg and x > 0.6 * x_avg and not found:
+                        if x < 1.2 * x_avg and x > 0.8 * x_avg and not found:
                             group.append(x)
                             found = True 
                     if not found:
@@ -86,7 +85,7 @@ class LineFollower:
                     found = False
                     for group in y_values:
                         y_avg = sum(group)/ float(len(group))
-                        if y < 1.4 * y_avg and y > 0.6 * y_avg and not found:
+                        if y < 1.2 * y_avg and y > 0.8 * y_avg and not found:
                             group.append(y)
                             found = True
                     if not found:
@@ -140,22 +139,25 @@ class LineFollower:
                      else:
                          if self.direction == Direction.down:
                             next_direction = Direction.right
+                 print(next_direction)
                  if self.immediate_dir == next_direction:
                      self.change_dir_count -= 1
                  else:
-                    if next_direction != Direction.neutral and self.change_dir_count < 5:
+                    if next_direction != Direction.neutral and self.change_dir_count < 3:
                         self.change_dir_count += 1
-                 if self.change_dir_count == 5:
-                    if next_direction != Direction.neutral:
-                        self.immediate_dir = next_direction
+                 if self.change_dir_count == 3:
+                    self.immediate_dir = next_direction
                  if self.change_dir_count == 0:
-                     self.change_dir_count = 5
-                     self.next_dir = self.immediate_dir
-                     self.find_turn = False
-                     self.turn = current_turn
+                     if self.immediate_dir != Direction.neutral:
+                         self.change_dir_count = 3
+                         self.next_dir = self.immediate_dir
+                         self.find_turn = False
+                         self.turn = current_turn
+                     else:
+                         self.is_moving = False
             else:
                 self.dir_change.append(current_turn)
-                if len(self.dir_change) > 5:
+                if len(self.dir_change) > 3:
                     self.dir_change.pop(0)
                 turn_avg = sum(self.dir_change)/len(self.dir_change)
                 if turn_avg > 1.3 * self.turn:
@@ -179,5 +181,5 @@ class LineFollower:
 cap = cv2.VideoCapture(sys.argv[1])
 follow = LineFollower()
 follow.findStartDir(cap)
-while(True):
+while(follow.is_moving):
     follow.determineDir(cap)
