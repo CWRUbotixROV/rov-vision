@@ -15,7 +15,7 @@ class LineFollower:
     direction = Direction.neutral    
     immediate_dir = Direction.neutral  # currently registered direction
     next_dir = Direction.neutral   # will be direction when turn decreases    
-    change_dir_count = 3        # number of registerd turns needed to change direction
+    change_dir_count = 5        # number of registerd turns needed to change direction
     turn = 1000000              # threshold for average of dir_change to determine a turn
     find_turn = False           # true when program is currently determining a turn direction
     dir_change = []             # queue of bounding rect area/hull area from previous five images    
@@ -23,7 +23,7 @@ class LineFollower:
     
     def prepareImgRed(self, video):
         retval, img = video.read()
-        lower_red = np.array([0, 0, 50])
+        lower_red = np.array([0, 0, 30])
         upper_red = np.array([70, 70, 255])
         lower_blue = np.array([50, 0, 0])
         upper_blue = np.array([255, 255, 255])
@@ -32,11 +32,12 @@ class LineFollower:
         mask_red = cv2.inRange(img, lower_red, upper_red)
         im_red = cv2.bitwise_and(img, img, mask=mask_red)
         im_red = cv2.GaussianBlur(im_red,(5,5),0)
-        # threshold
+        #threshold
         ret_r, im_red = cv2.threshold(im_red, 60, 255, cv2.THRESH_BINARY)
 
         # flatten so findContours doesn't get mad
         im_red = cv2.cvtColor(im_red, cv2.COLOR_BGR2GRAY)
+
         return img, im_red
 
     def getDir(self):
@@ -68,11 +69,14 @@ class LineFollower:
             boundingRect = cv2.minAreaRect(hull)
             boundingRect = cv2.boxPoints(boundingRect)
             boundingRect = np.int0(boundingRect)
-            current_turn = cv2.contourArea(boundingRect)/cv2.contourArea(hull)
+            hullArea = cv2.contourArea(hull)
+            current_turn = cv2.contourArea(boundingRect)/hullArea
             print(self.direction)
             if self.find_turn:     # looking for turn
                  x_values = []
                  y_values = []
+                 if (float(cv2.contourArea(cnt)) / hullArea) > 0.7:
+                    self.is_moving = False
                  for x in hull[:,:,0]:
                     found = False
                     for group in x_values:
@@ -140,24 +144,22 @@ class LineFollower:
                      else:
                          if self.direction == Direction.down:
                             next_direction = Direction.right
-                 if self.immediate_dir == next_direction:
+                 if self.immediate_dir == next_direction and next_direction != Direction.neutral:
                      self.change_dir_count -= 1
                  else:
-                    if next_direction != Direction.neutral and self.change_dir_count < 3:
+                    if self.change_dir_count < 5:
                         self.change_dir_count += 1
-                 if self.change_dir_count == 3:
+                 if self.change_dir_count == 5:
                     self.immediate_dir = next_direction
                  if self.change_dir_count == 0:
                      if self.immediate_dir != Direction.neutral:
-                         self.change_dir_count = 3
+                         self.change_dir_count = 5
                          self.next_dir = self.immediate_dir
                          self.find_turn = False
                          self.turn = current_turn
-                     else:
-                         self.is_moving = False
             else:
                 self.dir_change.append(current_turn)
-                if len(self.dir_change) > 3:
+                if len(self.dir_change) > 5:
                     self.dir_change.pop(0)
                 turn_avg = sum(self.dir_change)/len(self.dir_change)
                 if turn_avg > 1.3 * self.turn:
@@ -170,6 +172,7 @@ class LineFollower:
             #    print("Straight line")
             # cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2) 
                 cv2.drawContours(img, [hull], 0, (0, 255, 0), 2)
+                cv2.drawContours(img, [cnt], 0, (0, 255, 0), 2)
                 cv2.drawContours(img, [boundingRect], 0, (255, 0, 0), 2)
         else:
             print('No red line found')
