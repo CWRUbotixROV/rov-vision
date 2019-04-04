@@ -1,7 +1,9 @@
 import cv2
 from video import Video
+import sys
 
-cap = Video(port=4777)
+
+cap = Video(port=sys.argv[1])
 
 while True:
     while not cap.frame_available():

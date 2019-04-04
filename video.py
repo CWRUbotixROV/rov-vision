@@ -53,7 +53,7 @@ class Video():
         self.video_codec = '! application/x-rtp, payload=96 ! rtph264depay ! h264parse ! avdec_h264'
         # Python don't have nibble, convert YUV nibbles (4-4-4) to OpenCV standard BGR bytes (8-8-8)
         self.video_decode = \
-            '! decodebin ! videoconvert ! video/x-raw,format=(string)BGR ! videoconvert'
+            '! decodebin ! videoconvert ! videoscale ! video/x-raw,format=(string)BGR ! videoconvert'
         # Create a sink to get data
         self.video_sink_conf = \
             '! appsink emit-signals=true sync=false max-buffers=2 drop=true'
