@@ -21,7 +21,7 @@ class ShapeDetector:
             ar = w/float(h)
             print(ar)
             area = cv2.contourArea(c)
-            if area/float(w*h) <= 0.4 or ar <= 0.8 or ar >= 1/0.8:
+            if area/float(w*h) <= 0.4 or ar <= 0.8 or ar >= 1/0.75:
                 shape = 'line'
             else:
                 shape = 'square'
@@ -80,11 +80,9 @@ def detect_shapes():
             cv2.drawContours(image, [c], -1, (255, 0, 0), 2)
             cv2.putText(image, shape, (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
 
-            # cv2.imshow("Image", image)
-            # cv2.waitKey(0)
 
     cv2.imshow("Image", image)
-    # cv2.imwrite('image.png', image)
+    cv2.imwrite('image.png', image)
     cv2.waitKey(0)
     return num_shapes
 
