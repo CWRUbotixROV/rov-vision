@@ -1,5 +1,6 @@
-import cv2, imutils
-
+import cv2
+import imutils
+import numpy as np
 
 class ShapeDetector:
     def __init__(self):
@@ -7,34 +8,25 @@ class ShapeDetector:
 
     def detect(self, c):
         shape = 'unidentified'
-        peri = cv2.arcLength(c, True)   #perimeter 0.01
-        approx = cv2.approxPolyDP(c, 0.07*peri, True)   # simpify shape and determine how specific to follow contours
-        approxO = cv2.approxPolyDP(c, 0.02*peri, True)   #circle check
+        peri = cv2.arcLength(c, True)   # perimeter
+        approx = cv2.approxPolyDP(c, 0.04*peri, True)   # use RDP algorithm to simplify shape
+
         print(len(approx))
         if len(approx)==2:
-            shape = 'LL'
-        elif len(approxO)>=8:
-            shape = 'circle'
-        elif len(approx)==6 or len(approx)==3:
-            #if len(approxO)==6:
-                shape = 'triangle'
-            #else:
-             #   shape = 'circleTT'
+            shape = 'line'
+        elif len(approx)==3:
+            shape = 'triangle'
         elif len(approx)==4:    # could be square or line
             (x, y, w, h) = cv2.boundingRect(approx)
             ar = w/float(h)
             print(ar)
             area = cv2.contourArea(c)
-            if area/float(w*h) <= 0.4 or ar <= 0.8 or ar >= 1/0.8:
-                shape = 'SLine'
+            if area/float(w*h) <= 0.4 or ar <= 0.8 or ar >= 1/0.75:
+                shape = 'line'
             else:
                 shape = 'square'
-        elif len(approx)==6:
-            shape = 'triangle66'
-        elif len(approx)==8:
-            shape = 'octa'
         else:
-            shape = 'circle0'    # shapes can only be square, triangle, line, or circle
+            shape = 'circle'    # shapes can only be square, triangle, line, or circle
 
         return shape
 
@@ -47,24 +39,24 @@ def add_shape(shape, d):
 
 
 def detect_shapes():
-    image = cv2.imread('real_shapes.png', cv2.IMREAD_COLOR)
+    image = cv2.imread('benthic_species_1.png', cv2.IMREAD_COLOR)
     resized = imutils.resize(image, width=300)  # resize to simplify shapes
     ratio = image.shape[0] / float(resized.shape[0])
-
+    edges = cv2.Canny(image,100,200)
+    
     gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
 
     # Here we use an adaptive threshold on the image, since we expect the lighting to be non-uniform.
-    # Change level of contour
-    thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 7, 0)
-    cv2.imshow("thresh", thresh)
+    ret, otsu = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    cv2.imshow("otsu", otsu)
     cv2.waitKey(0)
 
     num_shapes = {}
 
-    cnts_ = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts_ = cv2.findContours(otsu.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
     cnts = None
-    if cv2.__version__[0]=='5':
+    if cv2.__version__[0]=='3':
         cnts = cnts_[1]
     else:
         cnts = cnts_[0]
@@ -76,7 +68,7 @@ def detect_shapes():
         M = cv2.moments(c)
 
         # ignore contours that are too small to be species
-        if c.shape[0] > 2 and area/(resized.shape[0]*resized.shape[1]) > 0.002:
+        if c.shape[0] > 2 and area/(resized.shape[0]*resized.shape[1]) > 0.002 and area/(resized.shape[0]*resized.shape[1]) < 0.25:
             cx = int((M["m10"] / M["m00"]) * ratio) if M['m00'] != 0 else 0
             cy = int((M["m01"] / M["m00"]) * ratio) if M['m00'] != 0 else 0
             shape = sd.detect(c)
@@ -86,13 +78,11 @@ def detect_shapes():
             c = c*ratio
             c = c.astype(int)
             cv2.drawContours(image, [c], -1, (255, 0, 0), 2)
-            cv2.putText(image, shape, (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 155, 250), 2)
+            cv2.putText(image, shape, (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
 
-            # cv2.imshow("Image", image)
-            # cv2.waitKey(0)
 
     cv2.imshow("Image", image)
-    # cv2.imwrite('image.png', image)
+    cv2.imwrite('image.png', image)
     cv2.waitKey(0)
     return num_shapes
 
