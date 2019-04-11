@@ -39,7 +39,8 @@ def add_shape(shape, d):
 
 
 def detect_shapes():
-    image = cv2.imread('benthic_species_1.png', cv2.IMREAD_COLOR)
+    image = cv2.imread('benthic_species_2.png', cv2.IMREAD_COLOR)
+    blank = cv2.imread('blank.png', cv2.IMREAD_COLOR)
     resized = imutils.resize(image, width=300)  # resize to simplify shapes
     ratio = image.shape[0] / float(resized.shape[0])
     edges = cv2.Canny(image,100,200)
@@ -79,10 +80,14 @@ def detect_shapes():
             c = c.astype(int)
             cv2.drawContours(image, [c], -1, (255, 0, 0), 2)
             cv2.putText(image, shape, (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
-
-
+	
+    line = cv2.rectangle(blank,(50,25), (150,35), (0, 0,255),-1)
+    square = cv2.rectangle(blank, (50, 75), (125, 150), (0,0,255), -1)
+    rect = cv2.rectangle(blank, (50, 75), (150, 150), (0,0,255), -1)
     cv2.imshow("Image", image)
-    cv2.imwrite('image.png', image)
+    #Display Results
+    cv2.imshow("Line", line)
+    
     cv2.waitKey(0)
     return num_shapes
 
