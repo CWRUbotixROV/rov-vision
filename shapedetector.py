@@ -87,6 +87,8 @@ def detect_shapes():
     cv2.imshow("Image", image)
     #Display Results
     cv2.imshow("Line", line)
+    cv2.imshow("Square", square)
+    cv2.imshow("Rectangle", rect)
     
     cv2.waitKey(0)
     return num_shapes
