@@ -1,4 +1,7 @@
 #!/bin/bash
+
+# Taken from the Pi 3; not our code
+
 export LD_LIBRARY_PATH=/usr/local/lib/
 
 if [ -z "$1" ]; then

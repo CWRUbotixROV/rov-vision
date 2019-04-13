@@ -1,4 +1,6 @@
-#!/bin/bash
+#! /bin/bash
+
+# start a second camera feed from the Pi 3. Needs to be run in background with './start_second_cam.sh &'.
 
 gstOptions=$(tr '\n' ' ' < $HOME/gstreamer3.param)
 
