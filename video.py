@@ -1,15 +1,24 @@
 """
 BlueRov video capture class.
 Code is from ardusub.com.
+
+NOTE 2/28/2019: The Conda packages for gstreamer do not include the udp plugin, so if you try to run 
+this code in a Conda environment, you're going to get a "No element named 'udpsrc'" error. To fix this,
+run the following:
+    export GST_PLUGIN_PATH_1_0="/usr/lib/x86_64-linux-gnu/gstreamer-1.0/:$GST_PLUGIN_PATH_1_0"
+(The path may differ; run gst-inspect-1.0 udpsrc *outside* Conda to find the plugin directory)
+This will add your system Gstreamer packages to the Conda gstreamer, and the Debian gstreamer1.0-plugins-good
+package contains the udp plugin.
+
+NOTE 3/19/2019: You also need to make sure that gst-python is installed from conda-forge, or you'll get the
+"Namespace Gst not available" error.
 """
 
-import cv2
 import gi
 import numpy as np
 
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst
-
 
 class Video():
     """BlueRov video capture class constructor
@@ -44,7 +53,7 @@ class Video():
         self.video_codec = '! application/x-rtp, payload=96 ! rtph264depay ! h264parse ! avdec_h264'
         # Python don't have nibble, convert YUV nibbles (4-4-4) to OpenCV standard BGR bytes (8-8-8)
         self.video_decode = \
-            '! decodebin ! videoconvert ! video/x-raw,format=(string)BGR ! videoconvert'
+            '! decodebin ! videoconvert ! videoscale ! video/x-raw,format=(string)BGR ! videoconvert'
         # Create a sink to get data
         self.video_sink_conf = \
             '! appsink emit-signals=true sync=false max-buffers=2 drop=true'
