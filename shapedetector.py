@@ -81,18 +81,15 @@ def detect_shapes():
             cv2.drawContours(image, [c], -1, (255, 0, 0), 2)
             cv2.putText(image, shape, (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
 	
-    line = cv2.rectangle(blank,(50,25), (150,35), (0, 0,255),-1)
-    square = cv2.rectangle(blank, (50, 75), (125, 150), (0,0,255), -1)
-    rect = cv2.rectangle(blank, (50, 75), (150, 150), (0,0,255), -1)
+    line = cv2.rectangle(blank,(25  ,25), (190,45), (0, 0,255),-1)
+    square = cv2.rectangle(blank, (50, 95), (150, 200), (0,0,255), -1)
+    circle = cv2.circle(blank, (100, 275), 50, (0,0,255), -1)
     cv2.imshow("Image", image)
     #Display Results
     cv2.imshow("Line", line)
-    cv2.imshow("Square", square)
-    cv2.imshow("Rectangle", rect)
     
     cv2.waitKey(0)
     return num_shapes
-
 
 num_shapes = detect_shapes()
 print(num_shapes)
