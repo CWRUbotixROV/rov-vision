@@ -39,7 +39,7 @@ def add_shape(shape, d):
 
 
 def detect_shapes():
-    image = cv2.imread('benthic_species_2.png', cv2.IMREAD_COLOR)
+    image = cv2.imread('real_shapes.png', cv2.IMREAD_COLOR)
     blank = cv2.imread('blank.png', cv2.IMREAD_COLOR)
     resized = imutils.resize(image, width=300)  # resize to simplify shapes
     ratio = image.shape[0] / float(resized.shape[0])
@@ -81,13 +81,21 @@ def detect_shapes():
             cv2.drawContours(image, [c], -1, (255, 0, 0), 2)
             cv2.putText(image, shape, (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
 	
-    line = cv2.rectangle(blank,(25  ,25), (190,45), (0, 0,255),-1)
-    square = cv2.rectangle(blank, (50, 95), (150, 200), (0,0,255), -1)
-    circle = cv2.circle(blank, (100, 275), 50, (0,0,255), -1)
+    #Draw shapes
+    line = cv2.rectangle(blank,(25,25), (190,45), (0,0,255),-1)
+    square = cv2.rectangle(blank, (50,95), (150,200), (0,0,255),-1)
+    circle = cv2.circle(blank, (100,275), 50, (0,0,255),-1)
+    triangle = np.array([(100,350),(50,450),(150,450)])
+    triangle = cv2.drawContours(blank, [triangle], 0, (0,0,255), -1)
+    #Display number of shapes
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    LineNumb = cv2.putText(blank,str(num_shapes['line']),(400, 75),font,3,(0,0,255),2,cv2.LINE_AA)
+    SquareNumb = cv2.putText(blank,str(num_shapes['square']),(400, 175),font,3,(0,0,255),2,cv2.LINE_AA)
+    CircleNumb = cv2.putText(blank,str(num_shapes['circle']),(400, 290),font,3,(0,0,255),2,cv2.LINE_AA)
+    TriangleNumb = cv2.putText(blank,str(num_shapes['triangle']),(400, 430),font,3,(0,0,255),2,cv2.LINE_AA)
     cv2.imshow("Image", image)
     #Display Results
     cv2.imshow("Line", line)
-    
     cv2.waitKey(0)
     return num_shapes
 
