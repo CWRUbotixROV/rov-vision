@@ -1,4 +1,4 @@
-import cv2
+import cv2, imutils
 import numpy as np
 import math
 
@@ -119,7 +119,9 @@ class GridMap:
         #         pt2 = (int(x0 - 10000*(-b)), int(y0 - 10000*(a)))
         #         cv2.line(image, pt1, pt2, (0,255,0), 3, cv2.LINE_AA)
 
-        cv2.imshow("test", image)
+        resized = imutils.resize(image, width=500)
+
+        cv2.imshow("test", resized)
         cv2.waitKey(1)
 
 
@@ -156,6 +158,7 @@ class Line:
 
 video = cv2.VideoCapture("/home/vm/Downloads/line_follow3.mp4")
 map = GridMap()
+video.set(cv2.CAP_PROP_POS_FRAMES, 100)
 while (True):
     retval, image = video.read()
     map.update(image)
