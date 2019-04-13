@@ -1,3 +1,7 @@
+"""
+Displays a UDP video stream on a given port.
+"""
+
 import cv2
 from video import Video
 import sys

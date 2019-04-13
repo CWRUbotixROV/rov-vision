@@ -1,4 +1,6 @@
 #!/bin/bash
+
+# Came with ArduSub, not ours
 export LD_LIBRARY_PATH=/usr/local/lib/
 
 if [ -z "$1" ]; then
