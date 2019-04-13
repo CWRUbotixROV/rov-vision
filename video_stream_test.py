@@ -1,3 +1,7 @@
+"""
+Open a gstreamer UDP video stream on a specified port.
+"""
+
 import cv2
 from video import Video
 import sys
