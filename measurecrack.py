@@ -3,7 +3,7 @@ import numpy as np
 
 # Measures crack using raio method
 def measure_crack(image):
-    #Get dimensions of blue rectangle
+    # Get dimensions of blue rectangle
     width, height = blue_rectangle(image)
     
     # Return larger dimension. Multiply ratio by 1.85
