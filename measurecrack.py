@@ -1,49 +1,51 @@
 import cv2, imutils
 import numpy as np
+import math
 
-# Measures crack using raio method
-def measure_crack(image):
+def measureCrackRatio(image):
+    """ Measures crack using raio method"""
+
+    CRACK_WIDTH = 1.9
+
     #Get dimensions of blue rectangle
-    width, height = blue_rectangle(image)
+    width, height = blueRectangle(image)
     
-    # Return larger dimension. Multiply ratio by 1.85
+    # Return larger dimension. Multiply ratio by CRACK_WIDTH
     if height > width:
-        return (height/width)*1.9
+        return (height/width) * CRACK_WIDTH
     else:
-        return (width/height)*1.9
-
-# Finds dimensions of a blue rectangle    	
-def blue_rectangle(image):
+        return (width/height) * CRACK_WIDTH
+	
+def blueRectangle(image):
+    """Finds dimensions of a blue rectangle"""
     # Convert BGR to HSV
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     # define range of blue color in HSV
-    lower_blue = np.array([90,50,50])
-    upper_blue = np.array([130,255,255])
+    LOWER_BLUE = np.array([90,50,50])
+    UPPER_BLUE = np.array([130,255,255])
 
     # Threshold the HSV image to get only blue colors
-    mask = cv2.inRange(hsv, lower_blue, upper_blue)
+    mask = cv2.inRange(hsv, LOWER_BLUE, UPPER_BLUE)
     
     # Find contours
     contours, hierarchy = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    img = cv2.drawContours(mask, contours, -1, (50,255,0), 3)
     
     # Find max area contour
-    maxArea = 0
+    maxContour = contours[0]
     
     for c in contours:
-        if cv2.contourArea(c) > maxArea:
-            maxArea = cv2.contourArea(c)
-            maxc = c
+        if cv2.contourArea(c) > cv2.contourArea(maxContour):
+            maxContour = c
     
     # Find minimum bounding rectangle
-    rect = cv2.minAreaRect(maxc)
+    rect = cv2.minAreaRect(maxContour)
     width = rect[1][0]
     height = rect[1][1]
     return width, height
 
-# Measures crack using perspective transformation method
-def measure_crack2(image):
+def measureCrackPerspective(image):
+    """Measures crack using perspective transformation method"""
     # define range of color in HSV
     lower = np.array([0,0,0])
     upper = np.array([180,50,100])
@@ -65,7 +67,7 @@ def measure_crack2(image):
     lines = cv2.HoughLines(mask, 1, np.pi/180, 700)
     # If no lines are detected, revert to ratio method
     if (lines is None):
-        return measure_crack(image)
+        return measureCrackRatio(image)
     a,b,c = lines.shape
     
     top = []
@@ -74,102 +76,93 @@ def measure_crack2(image):
     right = []
     
     height, width, channels = image.shape
+
+    ANGLE_THRESH = 0.2
+    PARTITION = 0.25
     
     for i in range(a):
         rho = lines[i][0][0]
         theta = lines[i][0][1]
         
         # Sort lines into left, right, top, and bottom
-        if (theta < 0.2):
-            if (rho < 0.25 * width):
+        if (theta < ANGLE_THRESH):
+            if (rho < PARTITION * width):
                 left.append([rho, theta])
-            elif (rho > 0.75 * width):
+            elif (rho > (1 - PARTITION) * width):
                 right.append([rho, theta])
-        elif (theta > 2.94):
-            if (rho > -0.25 * width):
+        elif (theta > math.pi - ANGLE_THRESH):
+            if (rho > -PARTITION * width):
                 left.append([rho, theta])
-            elif (rho < -0.75 * width):
+            elif (rho < -(1 - PARTITION) * width):
                 right.append([rho, theta])
-        elif (theta > 1.37 and theta < 1.77):
-            if (rho < 0.25 * height):
+        elif (theta > (math.pi / 2 - ANGLE_THRESH) and theta < (math.pi / 2 + ANGLE_THRESH)):
+            if (rho < PARTITION * height):
                 top.append([rho, theta])
-            elif (rho > 0.75 * height):
+            elif (rho > (1 - PARTITION) * height):
                 bottom.append([rho, theta])
     
     # If grid line detection fails, revert to ratio method
     if (len(top) == 0 or len(bottom) == 0 or len(left) == 0 or len(right) == 0):
-        return measure_crack(image)
+        return measureCrackRatio(image)
 
     x1, y1 = intersect(top, left)
     x2, y2 = intersect(top, right)
     x3, y3 = intersect(bottom, left)
     x4, y4 = intersect(bottom, right)
     
-    # Draw lines on image
-    # cv2.line(image, (x1, y1), (x2, y2), (0, 255, 0), 5)
-    # cv2.line(image, (x1, y1), (x3, y3), (0, 255, 0), 5)
-    # cv2.line(image, (x2, y2), (x4, y4), (0, 255, 0), 5)
-    # cv2.line(image, (x3, y3), (x4, y4), (0, 255, 0), 5)
-    
-    # Display image with lines drawn
-    # resized = imutils.resize(image, width=600)
-    # cv2.imshow("lines", resized)
-    # cv2.waitKey(0)
-    
+    IMAGE_SIZE = 3000
+    # Find number of cm per pixel
+    SCALE = 30 / IMAGE_SIZE
+
     # Find perspective transform matrix
     src = np.float32([[x1, y1], [x2, y2], [x3, y3], [x4, y4]])
-    dst = np.float32([[0, 0], [3000, 0], [0, 3000], [3000, 3000]])
+    dst = np.float32([[0, 0], [IMAGE_SIZE, 0], [0, IMAGE_SIZE], [IMAGE_SIZE, IMAGE_SIZE]])
     matrix = cv2.getPerspectiveTransform(src, dst)
     
     # Perspective transform original image
-    warped = cv2.warpPerspective(image, matrix, (3000, 3000))
+    warped = cv2.warpPerspective(image, matrix, (IMAGE_SIZE, IMAGE_SIZE))
     
-    # Display warped image
-    # resized = imutils.resize(warped, width=600)
-    # cv2.imshow("warped", resized)
-    # cv2.waitKey(0)
+    width, height = blueRectangle(warped)
     
-    width, height = blue_rectangle(warped)
-    
-    # Find larger dimension. Divide by 100 because 100 pixels = 1 cm.
+    # Find larger dimension and scale it into cm
     if (width > height):
-        ret = width / 100
+        ret = width * SCALE
     else:
-        ret = height / 100
+        ret = height * SCALE
     
     # If dimension is out of bounds, revert to ratio method
     if (ret > 21 or ret < 7):
-        return measure_crack(image)
+        return measureCrackRatio(image)
     else:
         return ret
-
-# Find the average intersection point between two sets of lines    
+   
 def intersect(lines1, lines2):
-    xs = []
-    ys = []
+    """Find the average intersection point between two sets of lines"""
+    xcoords = []
+    ycoords = []
     for line1 in lines1:
-        a1 = np.cos(line1[1])
-        b1 = np.sin(line1[1])
-        m1 = -a1 / b1
-        x1 = a1 * line1[0]
-        y1 = b1 * line1[0]
-        b1 = y1 - (x1 * m1)
+        slope1, yint1 = convertToSlopeInt(line1)
         for line2 in lines2:
+            # Change vertical line to slightly off vertical to avoid divide by 0 errors
             if (line2[1] == 0.0):
                 line2[1] = 0.0001
-            a2 = np.cos(line2[1])
-            b2 = np.sin(line2[1])
-            m2 = -a2 / b2
-            x2 = a2 * line2[0]
-            y2 = b2 * line2[0]
-            b2 = y2 - (x2 * m2)
-            x = (b1 - b2) / (m2 - m1)
-            y = m1 * x + b1
-            xs.append(x)
-            ys.append(y)
-    meanx = int(sum(xs) / len(xs))
-    meany = int(sum(ys) / len(ys))
+            slope2, yint2 = convertToSlopeInt(line2)
+            x = (yint1 - yint2) / (slope2 - slope1)
+            y = slope1 * x + yint1
+            xcoords.append(x)
+            ycoords.append(y)
+    meanx = int(sum(xcoords) / len(xcoords))
+    meany = int(sum(ycoords) / len(ycoords))
     return meanx, meany
 
-
-
+def convertToSlopeInt(line):
+    """Converts a line into slope intercept form"""
+    rho = line[0]
+    theta = line[1]
+    cos = np.cos(theta)
+    sin = np.sin(theta)
+    slope = -cos / sin
+    x = cos * rho
+    y = sin * rho
+    yint = y - (x * slope)
+    return slope, yint
