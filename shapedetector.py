@@ -2,7 +2,11 @@ import cv2
 import imutils
 import numpy as np
 
+# Use otsu threshholding to find contours of shapes in image and count number of sides in contours
+# to determine which shapes and how many are present in the image
+
 class ShapeDetector:
+    # Take in image and determine the shapes with the number of sides
     def detect(self, c):
         shape = 'unidentified'
         # perimeter
@@ -11,7 +15,7 @@ class ShapeDetector:
         approx = cv2.approxPolyDP(c, 0.04 * peri, True)   
 
         # Check what shape is in image
-         # shapes can only be square, triangle, line, or circle
+        # Shapes can only be square, triangle, line, or circle
         print(len(approx))
         
         AREARATIO = 0.4
@@ -38,7 +42,7 @@ class ShapeDetector:
 
         return shape
 
-
+# Adds shape to array and increases count for that shape
 def add_shape(shape, d):
     if shape in d:
         d[shape] = int(d[shape])+1
