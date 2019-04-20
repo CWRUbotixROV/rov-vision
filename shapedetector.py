@@ -45,7 +45,7 @@ def add_shape(shape, d):
     else:
         d[shape] = 1
 
-
+# detects shapes on a given image after finding edges
 def detect_shapes():
     image = cv2.imread('real_shapes.png', cv2.IMREAD_COLOR)
     # created a new screen for the display of the counts for the shapes
