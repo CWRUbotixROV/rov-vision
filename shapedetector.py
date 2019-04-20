@@ -3,30 +3,36 @@ import imutils
 import numpy as np
 
 class ShapeDetector:
-    def __init__(self):
-        pass
-
     def detect(self, c):
         shape = 'unidentified'
-        peri = cv2.arcLength(c, True)   # perimeter
-        approx = cv2.approxPolyDP(c, 0.04*peri, True)   # use RDP algorithm to simplify shape
+        # perimeter
+        peri = cv2.arcLength(c, True)   
+        # use RDP algorithm to simplify shape
+        approx = cv2.approxPolyDP(c, 0.04 * peri, True)   
 
+        # Check what shape is in image
+         # shapes can only be square, triangle, line, or circle
         print(len(approx))
+        
+        areaRatio = 0.4
+        arUpper = 0.8
+        arLower = (1/0.75)
         if len(approx)==2:
             shape = 'line'
         elif len(approx)==3:
             shape = 'triangle'
-        elif len(approx)==4:    # could be square or line
+        # Check if square or line
+        elif len(approx)==4:    
             (x, y, w, h) = cv2.boundingRect(approx)
             ar = w/float(h)
             print(ar)
             area = cv2.contourArea(c)
-            if area/float(w*h) <= 0.4 or ar <= 0.8 or ar >= 1/0.75:
+            if area/float(w*h) <= areaRatio or ar <= arUpper or ar >= arLower:
                 shape = 'line'
             else:
                 shape = 'square'
         else:
-            shape = 'circle'    # shapes can only be square, triangle, line, or circle
+            shape = 'circle'   
 
         return shape
 
@@ -48,7 +54,7 @@ def detect_shapes():
     gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
 
-    # Here we use an adaptive threshold on the image, since we expect the lighting to be non-uniform.
+    # Use an adaptive threshold on the image, since lighting is expected to be non-uniform.
     ret, otsu = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     cv2.imshow("otsu", otsu)
     cv2.waitKey(0)
@@ -69,7 +75,9 @@ def detect_shapes():
         M = cv2.moments(c)
 
         # ignore contours that are too small to be species
-        if c.shape[0] > 2 and area/(resized.shape[0]*resized.shape[1]) > 0.002 and area/(resized.shape[0]*resized.shape[1]) < 0.25:
+        upperContourThresh = 0.25
+        lowerContourThresh = 0.002
+        if c.shape[0] > 2 and area/(resized.shape[0]*resized.shape[1]) > lowerContourThresh and area/(resized.shape[0]*resized.shape[1]) < upperContourThresh:
             cx = int((M["m10"] / M["m00"]) * ratio) if M['m00'] != 0 else 0
             cy = int((M["m01"] / M["m00"]) * ratio) if M['m00'] != 0 else 0
             shape = sd.detect(c)
@@ -81,20 +89,43 @@ def detect_shapes():
             cv2.drawContours(image, [c], -1, (255, 0, 0), 2)
             cv2.putText(image, shape, (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
 	
-    #Draw shapes
-    line = cv2.rectangle(blank,(25,25), (190,45), (0,0,255),-1)
-    square = cv2.rectangle(blank, (50,95), (150,200), (0,0,255),-1)
-    circle = cv2.circle(blank, (100,275), 50, (0,0,255),-1)
-    triangle = np.array([(100,350),(50,450),(150,450)])
+    # Draw line, Square, Circle and Triangle shapes
+    lineCoord1 = (25,25)
+    lineCoord2 = (190,45)
+    line = cv2.rectangle(blank,lineCoord1,lineCoord2, (0,0,255),-1)
+
+    squareCoord1 = (50,95)
+    squareCoord2 = (150,200)
+    square = cv2.rectangle(blank,squareCoord1, squareCoord2, (0,0,255),-1)
+
+    circleCoord1 = (100,275)
+    circleRadius = 50
+    circle = cv2.circle(blank, circleCoord1, circleRadius, (0,0,255),-1)
+
+    triangleCoord1 = (100,350)
+    triangleCoord2 = (50,450)
+    triangleCoord3 = (150,450)
+    triangle = np.array([triangleCoord1,triangleCoord2,triangleCoord3])
     triangle = cv2.drawContours(blank, [triangle], 0, (0,0,255), -1)
-    #Display number of shapes
+
+    # Display number of shapes next to each shape
     font = cv2.FONT_HERSHEY_SIMPLEX
-    LineNumb = cv2.putText(blank,str(num_shapes['line']),(400, 75),font,3,(0,0,255),2,cv2.LINE_AA)
-    SquareNumb = cv2.putText(blank,str(num_shapes['square']),(400, 175),font,3,(0,0,255),2,cv2.LINE_AA)
-    CircleNumb = cv2.putText(blank,str(num_shapes['circle']),(400, 290),font,3,(0,0,255),2,cv2.LINE_AA)
-    TriangleNumb = cv2.putText(blank,str(num_shapes['triangle']),(400, 430),font,3,(0,0,255),2,cv2.LINE_AA)
+
+    lineNCoord = (400,75)
+    LineNumb = cv2.putText(blank,str(num_shapes['line']),lineNCoord,font,3,(0,0,255),2,cv2.LINE_AA)
+
+    squareNCoord = (400,175)
+    SquareNumb = cv2.putText(blank,str(num_shapes['square']),squareNCoord,font,3,(0,0,255),2,cv2.LINE_AA)
+    
+    circleNCoord = (400,290)
+    CircleNumb = cv2.putText(blank,str(num_shapes['circle']), circleNCoord,font,3,(0,0,255),2,cv2.LINE_AA)
+    
+    triangleNCoord =(400,430)
+    TriangleNumb = cv2.putText(blank,str(num_shapes['triangle']),triangleNCoord,font,3,(0,0,255),2,cv2.LINE_AA)
+    
     cv2.imshow("Image", image)
-    #Display Results
+
+    # Display Results
     cv2.imshow("Line", line)
     cv2.waitKey(0)
     return num_shapes
