@@ -49,19 +49,22 @@ def add_shape(shape, d):
     else:
         d[shape] = 1
 
-
+# detects shapes on a given image after finding edges
 def detect_shapes():
     image = cv2.imread('real_shapes.png', cv2.IMREAD_COLOR)
-    blank = cv2.imread('blank.png', cv2.IMREAD_COLOR)
-    resized = imutils.resize(image, width=300)  # resize to simplify shapes
+    # created a new screen for the display of the counts for the shapes
+    blank = cv2.imread('blank.png', cv2.IMREAD_COLOR) 
+    # resize to simplify shapes
+    resized = imutils.resize(image, width=300)
     ratio = image.shape[0] / float(resized.shape[0])
-    edges = cv2.Canny(image,100,200)
+    #finds edges of the image
+    edges = cv2.Canny(image,100,200) 
     
     gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
 
     # Use an adaptive threshold on the image, since lighting is expected to be non-uniform.
-    ret, otsu = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    ret, otsu = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU) #ret is the optimal threshold value for a bimodal image. otsu is the name of the thresholded image
     cv2.imshow("otsu", otsu)
     cv2.waitKey(0)
 
