@@ -14,9 +14,11 @@ class ShapeDetector:
          # shapes can only be square, triangle, line, or circle
         print(len(approx))
         
-        areaRatio = 0.4
-        arUpper = 0.8
-        arLower = (1/0.75)
+        AREARATIO = 0.4
+        ARUPPER = 0.8
+        ARLOWER = (1/0.75)
+
+        # Check if number of sides equals 2,3 or 4 which correspond to line, triangle and square respectively
         if len(approx)==2:
             shape = 'line'
         elif len(approx)==3:
@@ -27,7 +29,7 @@ class ShapeDetector:
             ar = w/float(h)
             print(ar)
             area = cv2.contourArea(c)
-            if area/float(w*h) <= areaRatio or ar <= arUpper or ar >= arLower:
+            if area/float(w*h) <= AREARATIO or ar <= ARUPPER or ar >= ARLOWER:
                 shape = 'line'
             else:
                 shape = 'square'
@@ -78,9 +80,14 @@ def detect_shapes():
         M = cv2.moments(c)
 
         # ignore contours that are too small to be species
-        upperContourThresh = 0.25
-        lowerContourThresh = 0.002
-        if c.shape[0] > 2 and area/(resized.shape[0]*resized.shape[1]) > lowerContourThresh and area/(resized.shape[0]*resized.shape[1]) < upperContourThresh:
+        UPPERCONTOURTHRESH = 0.25
+        LOWERCONTOURTHRESH = 0.002
+
+        if c.shape[0] > 2 and\
+        area/(resized.shape[0]*resized.shape[1]) > LOWERCONTOURTHRESH and\
+        area/(resized.shape[0]*resized.shape[1]) < UPPERCONTOURTHRESH:
+            # find centroid of contour
+            # if M['m00'] == 0 shape = line
             cx = int((M["m10"] / M["m00"]) * ratio) if M['m00'] != 0 else 0
             cy = int((M["m01"] / M["m00"]) * ratio) if M['m00'] != 0 else 0
             shape = sd.detect(c)
@@ -93,45 +100,48 @@ def detect_shapes():
             cv2.putText(image, shape, (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
 	
     # Draw line, Square, Circle and Triangle shapes
-    lineCoord1 = (25,25)
-    lineCoord2 = (190,45)
-    line = cv2.rectangle(blank,lineCoord1,lineCoord2, (0,0,255),-1)
+    # Coordinates determines through trial and error until appropriate proportions of shapes were found
+    LINECOORD1 = (25,25)
+    LINECOORD2 = (190,45)
+    line = cv2.rectangle(blank,LINECOORD1,LINECOORD2, (0,0,255),-1)
 
-    squareCoord1 = (50,95)
-    squareCoord2 = (150,200)
-    square = cv2.rectangle(blank,squareCoord1, squareCoord2, (0,0,255),-1)
+    SQUARECOORD1 = (50,95)
+    SQUARECOORD2 = (150,200)
+    square = cv2.rectangle(blank,SQUARECOORD1, SQUARECOORD2, (0,0,255),-1)
 
-    circleCoord1 = (100,275)
-    circleRadius = 50
-    circle = cv2.circle(blank, circleCoord1, circleRadius, (0,0,255),-1)
+    CIRCLECENTER = (100,275)
+    CIRCLERADIUS= 50
+    circle = cv2.circle(blank, CIRCLECENTER, CIRCLERADIUS, (0,0,255),-1)
 
-    triangleCoord1 = (100,350)
-    triangleCoord2 = (50,450)
-    triangleCoord3 = (150,450)
-    triangle = np.array([triangleCoord1,triangleCoord2,triangleCoord3])
+    TRIANGLECOORD1 = (100,350)
+    TRIANGLECOORD2 = (50,450)
+    TRIANGLECOORD3 = (150,450)
+    triangle = np.array([TRIANGLECOORD1,TRIANGLECOORD2,TRIANGLECOORD3])
     triangle = cv2.drawContours(blank, [triangle], 0, (0,0,255), -1)
 
     # Display number of shapes next to each shape
+    # Coordinates determines through trial and error until each number was across from its corresponding shape
     font = cv2.FONT_HERSHEY_SIMPLEX
 
-    lineNCoord = (400,75)
-    LineNumb = cv2.putText(blank,str(num_shapes['line']),lineNCoord,font,3,(0,0,255),2,cv2.LINE_AA)
+    LINENUMBCOORD = (400,75)
+    LineNumb = cv2.putText(blank,str(num_shapes['line']),LINENUMBCOORD,font,3,(0,0,255),2,cv2.LINE_AA)
 
-    squareNCoord = (400,175)
-    SquareNumb = cv2.putText(blank,str(num_shapes['square']),squareNCoord,font,3,(0,0,255),2,cv2.LINE_AA)
+    SQUARENUMBCOORD = (400,175)
+    SquareNumb = cv2.putText(blank,str(num_shapes['square']),SQUARENUMBCOORD,font,3,(0,0,255),2,cv2.LINE_AA)
     
-    circleNCoord = (400,290)
-    CircleNumb = cv2.putText(blank,str(num_shapes['circle']), circleNCoord,font,3,(0,0,255),2,cv2.LINE_AA)
+    CIRCLENUMBCOORD = (400,290)
+    CircleNumb = cv2.putText(blank,str(num_shapes['circle']), CIRCLENUMBCOORD,font,3,(0,0,255),2,cv2.LINE_AA)
     
-    triangleNCoord =(400,430)
-    TriangleNumb = cv2.putText(blank,str(num_shapes['triangle']),triangleNCoord,font,3,(0,0,255),2,cv2.LINE_AA)
+    TRIANGLENUMBCOORD =(400,430)
+    TriangleNumb = cv2.putText(blank,str(num_shapes['triangle']),TRIANGLENUMBCOORD,font,3,(0,0,255),2,cv2.LINE_AA)
     
     cv2.imshow("Image", image)
 
     # Display Results
-    cv2.imshow("Line", line)
-    cv2.waitKey(0)
-    return num_shapes
+    if __name__ == "__main__":
+        cv2.imshow("Line", line)
+        cv2.waitKey(0)
+        return num_shapes
 
 num_shapes = detect_shapes()
 print(num_shapes)
