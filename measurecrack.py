@@ -50,7 +50,7 @@ def measureCrackPerspective(image):
     lower = np.array([0,0,0])
     upper = np.array([180,50,100])
 
-    #Gaussian Blur
+    # Gaussian Blur
     blurredcolor = cv2.GaussianBlur(image, (5, 5), 0)
     
     # Convert BGR to HSV
