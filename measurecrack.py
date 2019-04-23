@@ -46,25 +46,23 @@ def blueRectangle(image):
 
 def measureCrackPerspective(image):
     """Measures crack using perspective transformation method"""
-    # define range of color in HSV
-    lower = np.array([0,0,0])
-    upper = np.array([180,50,100])
+    # define range of color for black grid lines in HSV
+    LOWER_BLACK = np.array([0,0,0])
+    UPPER_BLACK = np.array([180,50,100])
 
     # Gaussian Blur
-    blurredcolor = cv2.GaussianBlur(image, (5, 5), 0)
+    KERNEL_SIZE = (5, 5)
+    blurredcolor = cv2.GaussianBlur(image, KERNEL_SIZE, 0)
     
     # Convert BGR to HSV
     hsv = cv2.cvtColor(blurredcolor, cv2.COLOR_BGR2HSV)
     
     # Threshold the HSV image to get only black colors
-    mask = cv2.inRange(hsv, lower, upper)
-    
-    # resized = imutils.resize(mask, width=600)
-    # cv2.imshow("mask", resized)
-    # cv2.waitKey(0)
+    mask = cv2.inRange(hsv, LOWER_BLACK, UPPER_BLACK)
     
     # Detect lines
-    lines = cv2.HoughLines(mask, 1, np.pi/180, 700)
+    LINE_THRESH = 700
+    lines = cv2.HoughLines(mask, 1, np.pi/180, LINE_THRESH)
     # If no lines are detected, revert to ratio method
     if (lines is None):
         return measureCrackRatio(image)
