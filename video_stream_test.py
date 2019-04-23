@@ -1,20 +1,22 @@
-import cv2 as cv2
-import numpy as np
+"""
+Displays a UDP video stream on a given port.
+"""
 
-cap = cv2.VideoCapture(0)
+import cv2
+from video import Video
+import sys
 
-while(True):
-    # Capture frame-by-frame
-    ret, frame = cap.read()
 
-    # Our operations on the frame come here
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+cap = Video(port=sys.argv[1])
 
-    # Display the resulting frame
-    cv2.imshow('frame',gray)
+while True:
+    while not cap.frame_available():
+        continue
+    img = cap.frame()
+    
+    cv2.imshow('img', img)
+
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# When everything done, release the capture
-cap.release()
 cv2.destroyAllWindows()
