@@ -6,6 +6,9 @@ import cv2
 import numpy as np
 from video import Video
 
+"""
+NOTE 5/3/2019: All of the blue is missing from the underwater footage. This might be a problem.
+"""
 
 class Direction(Enum):
     """
@@ -65,30 +68,22 @@ class LineFollower:
 
         # img = cv2.imread('/home/sam/Pictures/screwdriver.jpg')
         # img = cv2.GaussianBlur(img, (5, 5), 0)
-        lower_red = np.array([0, 0, 50])
-        upper_red = np.array([80, 80, 255])
-        lower_blue = np.array([50, 0, 0])
-        upper_blue = np.array([255, 50, 50])
+        lower_red = np.array([0, 0, 30])
+        upper_red = np.array([3, 3, 255])
 
         # apply masks
         mask_red = cv2.inRange(img, lower_red, upper_red)
-        mask_blue = cv2.inRange(img, lower_blue, upper_blue)
         im_red = cv2.bitwise_and(img, img, mask=mask_red)
-        im_blue = cv2.bitwise_and(img, img, mask=mask_blue)
 
         # threshold
-        im_red = cv2.threshold(im_red, 60, 255, cv2.THRESH_BINARY)[1]
-        im_blue = cv2.threshold(im_blue, 60, 255, cv2.THRESH_BINARY)[1]
+        im_red = cv2.threshold(im_red, 30, 255, cv2.THRESH_BINARY)[1]
 
         # flatten so findContours doesn't get mad
         im_red = cv2.cvtColor(im_red, cv2.COLOR_BGR2GRAY)
-        im_blue = cv2.cvtColor(im_blue, cv2.COLOR_BGR2GRAY)
 
         # find contours
         cr = cv2.findContours(im_red, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        cb = cv2.findContours(im_blue, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         contours_r = cr[0]
-        contours_b = cb[0]
 
         drawn = img
 
@@ -161,8 +156,8 @@ class LineFollower:
         
         # # Note: Showing the image makes the loop run a LOT slower
         # cv2.imshow('image', img)
-        # if (cv2.waitKey(1) & 0xFF == ord('q')) or self.found:
-        #     return 'end'
+        if (cv2.waitKey(1) & 0xFF == ord('q')) or self.found:
+            return 'end'
     
     def next_direction(self):
         """
@@ -178,3 +173,10 @@ class LineFollower:
             return nextdir
         img = self.stream.frame()
         return self.handle_image(img)
+
+if __name__ == '__main__':
+    image = cv2.imread('line_underwater.png')
+    lf = LineFollower()
+    lf.set_moving(Direction.DOWN)
+    print(f"Next direction: {lf.handle_image(image, show=True)}")
+

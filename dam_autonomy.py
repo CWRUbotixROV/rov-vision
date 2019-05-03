@@ -67,7 +67,7 @@ period = 50   # loop period in milliseconds
 tn = 0
 
 try:
-    while True:     # run until stopped with Ctrl-C
+    while True:     # run until stopped with Ctrl-C, will change once everything else works
         tn = tn + period
         direction = lf.next_direction()
         print(direction)
