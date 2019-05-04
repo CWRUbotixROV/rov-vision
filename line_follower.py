@@ -102,7 +102,7 @@ class LineFollower:
             if(show):
                 drawn = cv2.drawContours(drawn, [biggest], -1, (0, 255, 0), 3)
 
-            if (w*h)/cv2.contourArea(biggest) > 2:    # this is a corner
+            if (w*h)/cv2.contourArea(biggest) > 4:    # this is a corner
                 # What we are doing is figuring out which quadrant the bounding box is in.
                 # This works because we know, from the rules on FOV, that corners will always be touching 
                 # two sides of the frame, so the distance between the bounding box and the side is 0.
@@ -140,6 +140,7 @@ class LineFollower:
             #     nextdir = Direction.RIGHT if self.moving==Direction.RIGHT else Direction.LEFT
             
             else:
+                print("Straight segment")
                 nextdir = self.moving
 
             if show:
@@ -175,8 +176,8 @@ class LineFollower:
         return self.handle_image(img)
 
 if __name__ == '__main__':
-    image = cv2.imread('line_underwater.png')
+    image = cv2.imread('crack_underwater_2.png')
     lf = LineFollower()
-    lf.set_moving(Direction.DOWN)
+    lf.set_moving(Direction.UP)
     print(f"Next direction: {lf.handle_image(image, show=True)}")
 
