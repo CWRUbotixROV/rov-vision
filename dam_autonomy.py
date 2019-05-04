@@ -50,40 +50,37 @@ def stop():
     for i in range(6):
         set_rc_channel_pwm(i+1, 1500)
 
-def disarm(_master):
-    _master.mav.command_long_send(1, 1, 400, 0, 0, 0, 0, 0, 0, 0, 0) # disarm
+if __name__=='__main__':
+    master = mavutil.mavlink_connection('udpin:192.168.2.1:14540')
 
-master = mavutil.mavlink_connection('udpin:192.168.2.1:14540')
-# p = subprocess.Popen(['python3', 'follow_line.py'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    master.wait_heartbeat()
 
-master.wait_heartbeat()
-# Should be armed manually from QGroundControl
-# master.mav.command_long_send(1, 1, 400, 0, 1, 0, 0, 0, 0, 0, 0)    # arm
+    lf = LineFollower(port=4777)
 
-lf = LineFollower(port=4777)
+    direction = Direction.STOP
 
-direction = Direction.STOP
-period = 50   # loop period in milliseconds
-tn = 0
+    print("Beginning autonomy")
+    master.arducopter_arm()
 
-try:
-    while True:     # run until stopped with Ctrl-C, will change once everything else works
-        tn = tn + period
-        direction = lf.next_direction()
-        print(direction)
-        if direction == Direction.UP:
-            go_up()
-        elif direction == Direction.DOWN:
-            go_down()
-        elif direction == Direction.LEFT:
-            go_left()
-        elif direction == Direction.RIGHT:
-            go_right()
-        else:
-            stop()
-        time.sleep(tn - int(round(time.time()*1000)))   # ensure that we update the direction at a constant rate
-except KeyboardInterrupt:
-    pass
+    try:
+        while True:     # run until stopped with Ctrl-C, will change once everything else works
+            direction = lf.next_direction()
+            print(direction)
+            if direction == Direction.UP:
+                go_up()
+            elif direction == Direction.DOWN:
+                go_down()
+            elif direction == Direction.LEFT:
+                go_left()
+            elif direction == Direction.RIGHT:
+                go_right()
+            else:
+                stop()
+            lf.set_moving(direction)    # update the direction in lf once the command succeeds
+    except KeyboardInterrupt:
+        pass
 
-stop()
-disarm(master)
+    print("Disarming")
+    stop()
+    master.arducopter_disarm()
+

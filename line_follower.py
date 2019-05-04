@@ -50,7 +50,7 @@ class LineFollower:
 
     def set_moving(self, m):
         """
-        Set the value of the `moving` instance variable.
+        Set the value of `moving`, the attibute for the direction of motion.
         """
         if m in Direction:
             self.moving = m
@@ -66,12 +66,12 @@ class LineFollower:
         nextdir = Direction.STOP
         height, width, _ = img.shape
 
-        # img = cv2.imread('/home/sam/Pictures/screwdriver.jpg')
-        # img = cv2.GaussianBlur(img, (5, 5), 0)
         lower_red = np.array([0, 0, 30])
         upper_red = np.array([3, 3, 255])
 
-        # apply masks
+        img = cv2.GaussianBlur(img, (5,5), 0)   # smooth image
+
+        # apply mask for red
         mask_red = cv2.inRange(img, lower_red, upper_red)
         im_red = cv2.bitwise_and(img, img, mask=mask_red)
 
