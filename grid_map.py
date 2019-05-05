@@ -7,13 +7,13 @@ class GridMap:
     y = 0
     hlines = []
     vlines = []
-    thresh = 50
+    thresh = 400
 
     def update(self, image):
         blurred = cv2.GaussianBlur(image, (5, 5), 0)
         hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
         lower = np.array([0, 0, 0])
-        upper = np.array([180, 50, 150])
+        upper = np.array([180, 40, 100])
         mask = cv2.inRange(hsv, lower, upper)
 
         gray = cv2.cvtColor(blurred, cv2.COLOR_BGR2GRAY)
@@ -96,15 +96,26 @@ class GridMap:
 
         #Update lines
         for y in havg:
+            cv2.line(image, (0, int(y)), (10000, int(y)), (255,0,0), 3, cv2.LINE_AA)
+        #     update = False
+        #     for line in self.hlines:
+        #         if (line.update(y)):
+        #             update = True
+        #         elif (line.unupdated > 5):
+        #             self.hlines.remove(line)
+        #     if (update == False):
+        #         self.hlines.append(Line(y, 500))
+
+        updateLines(havg, self.hlines)
+        updateLines(vavg, self.vlines)
+
+        for line in self.hlines:
+            y = line.pos
             cv2.line(image, (0, int(y)), (10000, int(y)), (0,255,0), 3, cv2.LINE_AA)
-            update = False
-            for line in self.hlines:
-                if (line.update(y)):
-                    update = True
-                elif (line.unupdated > 5):
-                    self.hlines.remove(line)
-            if (update == False):
-                self.hlines.append(Line(y, 500))
+
+        for line in self.vlines:
+            x = line.pos
+            cv2.line(image, (int(x), 0), (int(x), 10000), (0, 255, 0), 3, cv2.LINE_AA)
 
         # lines = cv2.HoughLines(mask, 1, np.pi / 180, 300, None, 0, 0)
         # if lines is not None:
@@ -119,14 +130,26 @@ class GridMap:
         #         pt2 = (int(x0 - 10000*(-b)), int(y0 - 10000*(a)))
         #         cv2.line(image, pt1, pt2, (0,255,0), 3, cv2.LINE_AA)
 
-        resized = imutils.resize(image, width=500)
+        resized = imutils.resize(image, width=800)
 
         cv2.imshow("test", resized)
         cv2.waitKey(1)
 
+def updateLines(newLines, lines):
+    for coordinate in newLines:
+        update = False
+        for line in lines:
+            if (line.update(coordinate)):
+                update = True
+                break
+            elif (line.unupdated > 5):
+                lines.remove(line)
+        if (update == False):
+            lines.append(Line(coordinate, 750))
+
 
 class Line:
-    thresh = 50
+    thresh = 400
     def __init__(self, pos, bound):
         self.pos = pos
         self.duration = 1
@@ -139,11 +162,13 @@ class Line:
     def update(self, pos):
         if (abs(self.pos - pos) < self.thresh):
             
-            if (self.duration > 5 and self.crossed == 0):
+            if (self.duration > 0 and self.crossed == 0):
                 if (pos >= self.bound and self.pos < self.bound):
                     self.crossed = 1
+                    print("1")
                 elif (pos <= self.bound and self.pos > self.bound):
                     self.crossed = -1
+                    print("-1")
 
             self.pos = pos
             self.duration += 1
@@ -156,9 +181,9 @@ class Line:
 
 
 
-video = cv2.VideoCapture("/home/vm/Downloads/line_follow3.mp4")
+video = cv2.VideoCapture("/home/vm/Downloads/line.mp4")
 map = GridMap()
-video.set(cv2.CAP_PROP_POS_FRAMES, 100)
+video.set(cv2.CAP_PROP_POS_FRAMES, 370)
 while (True):
     retval, image = video.read()
     map.update(image)
