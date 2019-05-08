@@ -3,11 +3,16 @@ import numpy as np
 import math
 
 class GridMap:
-    x = 0
-    y = 0
     hlines = []
     vlines = []
-    thresh = 400
+    thresh = 200
+    crackx = 0
+    cracky = 0
+    maxblueratio = 0
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
 
     def update(self, image):
         blurred = cv2.GaussianBlur(image, (5, 5), 0)
@@ -15,6 +20,10 @@ class GridMap:
         lower = np.array([0, 0, 0])
         upper = np.array([180, 40, 100])
         mask = cv2.inRange(hsv, lower, upper)
+
+        # lower = np.array([0, 0, 0])
+        # upper = np.array([255, 80, 80])
+        # mask = cv2.inRange(blurred, lower, upper)
 
         gray = cv2.cvtColor(blurred, cv2.COLOR_BGR2GRAY)
         #thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 5)
@@ -106,16 +115,28 @@ class GridMap:
         #     if (update == False):
         #         self.hlines.append(Line(y, 500))
 
-        updateLines(havg, self.hlines)
-        updateLines(vavg, self.vlines)
+        updateLines(havg, self.hlines, height / 2)
+        updateLines(vavg, self.vlines, width / 2)
 
         for line in self.hlines:
+            if (line.counted == False and line.crossed != 0):
+                self.y += line.crossed
+                line.counted = True
             y = line.pos
             cv2.line(image, (0, int(y)), (10000, int(y)), (0,255,0), 3, cv2.LINE_AA)
 
         for line in self.vlines:
+            if (line.counted == False and line.crossed != 0):
+                self.x += line.crossed
+                line.counted = True
             x = line.pos
             cv2.line(image, (int(x), 0), (int(x), 10000), (0, 255, 0), 3, cv2.LINE_AA)
+
+        blueratio = blueRectangle(image)
+        if (blueratio > self.maxblueratio):
+            self.maxblueratio = blueratio
+            self.crackx = self.x
+            self.cracky = self.y
 
         # lines = cv2.HoughLines(mask, 1, np.pi / 180, 300, None, 0, 0)
         # if lines is not None:
@@ -130,30 +151,36 @@ class GridMap:
         #         pt2 = (int(x0 - 10000*(-b)), int(y0 - 10000*(a)))
         #         cv2.line(image, pt1, pt2, (0,255,0), 3, cv2.LINE_AA)
 
-        resized = imutils.resize(image, width=800)
+        # resized = imutils.resize(image, width=800)
 
-        cv2.imshow("test", resized)
-        cv2.waitKey(1)
+        # cv2.imshow("test", resized)
+        # cv2.waitKey(1)
 
-def updateLines(newLines, lines):
+def updateLines(newLines, lines, half):
     for coordinate in newLines:
         update = False
         for line in lines:
             if (line.update(coordinate)):
                 update = True
                 break
-            elif (line.unupdated > 5):
-                lines.remove(line)
         if (update == False):
-            lines.append(Line(coordinate, 750))
+            lines.append(Line(coordinate, half))
+    for line in lines:
+        if (line.updated == False):
+            line.unupdated += 1
+            if (line.unupdated > 5):
+                lines.remove(line)
+        else:
+            line.updated = False
 
 
 class Line:
-    thresh = 400
+    thresh = 200
     def __init__(self, pos, bound):
         self.pos = pos
         self.duration = 1
         self.unupdated = 0
+        self.updated = False
         self.bound = bound
         self.crossed = 0
         self.counted = False
@@ -164,26 +191,45 @@ class Line:
             
             if (self.duration > 0 and self.crossed == 0):
                 if (pos >= self.bound and self.pos < self.bound):
-                    self.crossed = 1
-                    print("1")
-                elif (pos <= self.bound and self.pos > self.bound):
                     self.crossed = -1
                     print("-1")
+                elif (pos <= self.bound and self.pos > self.bound):
+                    self.crossed = 1
+                    print("1")
 
             self.pos = pos
             self.duration += 1
-
+            self.updated = True
 
             return True
         else:
-            self.unupdated += 1
+            #self.unupdated += 1
             return False
+
+def blueRectangle(image):
+    #hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+    LOWER_BLUE = np.array([0, 0, 0])
+    UPPER_BLUE = np.array([255, 80, 80])
+    mask = cv2.inRange(image, LOWER_BLUE, UPPER_BLUE)
+
+    sum = cv2.sumElems(mask)[0] / 255
+
+    height, width, channels = image.shape
+    total = height * width
+    return sum / total
+
+    # resized = imutils.resize(mask, width=800)
+
+    # cv2.imshow("test", resized)
+    # cv2.waitKey(1)
+
 
 
 
 video = cv2.VideoCapture("/home/vm/Downloads/line.mp4")
-map = GridMap()
-video.set(cv2.CAP_PROP_POS_FRAMES, 370)
+map = GridMap(0, -1)
+#video.set(cv2.CAP_PROP_POS_FRAMES, 700)
 while (True):
     retval, image = video.read()
     map.update(image)
+    print(str(map.crackx) + " " + str(map.cracky))
