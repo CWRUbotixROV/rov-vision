@@ -8,6 +8,7 @@ import sys
 
 
 cap = Video(port=sys.argv[1])
+img_count = 0
 
 while True:
     while not cap.frame_available():
@@ -18,5 +19,8 @@ while True:
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
+    if cv2.waitKey(1)==ord('p'):
+        cv2.imwrite(f"image_{img_count}.png", img)
+        img_count += 1
 
 cv2.destroyAllWindows()
