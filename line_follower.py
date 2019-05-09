@@ -107,8 +107,8 @@ class LineFollower:
             return Direction.RIGHT
     
     def mask_for_red(self, img):
-        lower_red = np.array([0, 0, 80])    # [0, 0, 20] in water
-        upper_red = np.array([80, 80, 255]) # [3, 3, 255] in water
+        lower_red = np.array([0, 0, 20])    # [0, 0, 20] in water
+        upper_red = np.array([3, 3, 255]) # [3, 3, 255] in water
 
         im_red = cv2.GaussianBlur(img, (5,5), 0)   # smooth image
 

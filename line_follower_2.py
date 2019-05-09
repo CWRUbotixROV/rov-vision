@@ -26,6 +26,7 @@ class LineFollower:
     last_dir = immediate_dir
     lost_line = False
     last_centroid = (0, 0)
+    dir_vec = np.array([0, 0])
 
     START_ANGLE_BARRIER = 45           # barrier angle for whether line start it to the right or down
     END_OF_LINE_SOLIDITY = 0.7         # solidity determine end of line
@@ -49,8 +50,8 @@ class LineFollower:
 
         # values to determine red color mask
         lower_bg_mask = 0
-        lower_red_mask = 80
-        upper_bg_mask = 80
+        lower_red_mask = 20
+        upper_bg_mask = 3
         upper_red_mask = 255
         
         # values for gaussian blur
@@ -137,7 +138,7 @@ class LineFollower:
         # find contours
         contours_r, _ = cv2.findContours(im_red, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         cnt = max(contours_r, key=cv2.contourArea) if contours_r else None
-        if contours_r and cv2.contourArea(cnt) >= 100:
+        if contours_r and cv2.contourArea(cnt) >= 25:
             # compute largest contour, hull, and bounding rectangle
             M = cv2.moments(cnt)
             self.last_centroid = (int(M['m10']/M['m00']), int(M['m01']/M['m00']))
@@ -170,18 +171,18 @@ class LineFollower:
                         self.turn = turn_avg
 
                 #draw hull, contour, and bouding rectangle for testing purposes
-                cv2.drawContours(img, [hull], 0, (0, 255, 0), 2)
-                cv2.drawContours(img, [cnt], 0, (0, 255, 0), 2)
-                cv2.drawContours(img, [boundingRect], 0, (255, 0, 0), 2)
+                # cv2.drawContours(img, [hull], 0, (0, 255, 0), 2)
+                # cv2.drawContours(img, [cnt], 0, (0, 255, 0), 2)
+                # cv2.drawContours(img, [boundingRect], 0, (255, 0, 0), 2)
         else:   # Temporarily stop tracking the line and try to re-acquire it
             self.direction = self.centroid_side(height, width)
             self.lost_line = True
         
-        img = cv2.line(img, self.last_centroid, self.last_centroid, (255,0,255), 10)
-        cv2.putText(img, str(self.direction), (100,100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2)
-        cv2.putText(img, str(self.immediate_dir), (100,180), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2)
-        cv2.imshow('img', img)
-        cv2.waitKey(1)
+        # img = cv2.line(img, self.last_centroid, self.last_centroid, (255,0,255), 10)
+        # cv2.putText(img, str(self.direction), (100,100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2)
+        # cv2.putText(img, str(self.immediate_dir), (100,180), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2)
+        # cv2.imshow('img', img)
+        # cv2.waitKey(1)
 
     def determine_turn_type(self, hull, cnt, hull_area, current_turn):
         """Uses the hull to find the direction of a turn

@@ -12,8 +12,8 @@ RC_CHAN_FORWARD = 5
 RC_CHAN_LATERAL = 6
 
 # PWM values
-UP_PWM = 1600
-DOWN_PWM = 1700
+UP_PWM = 1400
+DOWN_PWM = 1550
 LEFT_PWM = 1400
 RIGHT_PWM = 1600
 
@@ -69,6 +69,7 @@ if __name__=='__main__':
     frame = cap.frame()
     lf.find_start_dir(frame)
     direction = lf.direction
+    last_dir = direction
 
     try:
         while True:     # run until stopped with Ctrl-C, will change once everything else works
@@ -77,6 +78,10 @@ if __name__=='__main__':
             frame = cap.frame()
             lf.determine_find_dir(frame)
             direction = lf.direction
+            if direction != last_dir:
+                # Go back a bit
+                pass
+            
             print(direction)
             if direction == Direction.up:
                 go_up()
@@ -88,6 +93,9 @@ if __name__=='__main__':
                 go_right()
             else:
                 stop()
+            if cv2.waitKey(1)==ord('p'):
+                cv2.imwrite('underwater.png', frame)
+            last_dir = direction
     except KeyboardInterrupt:
         pass
 
