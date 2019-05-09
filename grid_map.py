@@ -17,17 +17,18 @@ class GridMap:
     def update(self, image):
         blurred = cv2.GaussianBlur(image, (5, 5), 0)
         hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
-        lower = np.array([0, 0, 0])
-        upper = np.array([180, 40, 100])
-        mask = cv2.inRange(hsv, lower, upper)
+        LOWER = np.array([60, 0, 0])
+        UPPER = np.array([130, 255, 45])
+        mask = cv2.inRange(hsv, LOWER, UPPER)
 
-        # lower = np.array([0, 0, 0])
-        # upper = np.array([255, 80, 80])
-        # mask = cv2.inRange(blurred, lower, upper)
+        LOWER = np.array([0, 14, 9])
+        UPPER = np.array([2, 25, 17])
+        mask = cv2.inRange(blurred, LOWER, UPPER)
 
         gray = cv2.cvtColor(blurred, cv2.COLOR_BGR2GRAY)
         #thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 5)
 
+        # Detect Lines
         lines = cv2.HoughLinesP(mask, 1, np.pi / 180, 50, None, 50, 10)
 
         height, width, channels = image.shape
@@ -48,12 +49,13 @@ class GridMap:
                         vertical.append(x)
                 #cv2.line(image, (l[0], l[1]), (l[2], l[3]), (0,255,0), 3, cv2.LINE_AA)
 
-        #Sort lines and group
+        #Sort lines
         horizontal.sort()
         sum = 0
         count = 0
         havg = []
 
+        # Group horizontal lines that are close together into havg
         if len(horizontal) > 0:
             for i in range(0, len(horizontal) - 1):
                 sum += horizontal[i]
@@ -68,7 +70,7 @@ class GridMap:
             avg = sum / count
             havg.append(avg)
         
-
+        # Group vertical lines that are close together into vavg
         vertical.sort()
         sum = 0
         count = 0
@@ -118,6 +120,7 @@ class GridMap:
         updateLines(havg, self.hlines, height / 2)
         updateLines(vavg, self.vlines, width / 2)
 
+        # Check if any horizontal lines have crossed
         for line in self.hlines:
             if (line.counted == False and line.crossed != 0):
                 self.y += line.crossed
@@ -125,6 +128,7 @@ class GridMap:
             y = line.pos
             cv2.line(image, (0, int(y)), (10000, int(y)), (0,255,0), 3, cv2.LINE_AA)
 
+        # Check if any vertical lines have crossed
         for line in self.vlines:
             if (line.counted == False and line.crossed != 0):
                 self.x += line.crossed
@@ -132,7 +136,9 @@ class GridMap:
             x = line.pos
             cv2.line(image, (int(x), 0), (int(x), 10000), (0, 255, 0), 3, cv2.LINE_AA)
 
+        # Find the ratio of the image that is blue
         blueratio = blueRectangle(image)
+        # If the blue ratio is bigger than the max then update the location of the blue crack
         if (blueratio > self.maxblueratio):
             self.maxblueratio = blueratio
             self.crackx = self.x
@@ -151,10 +157,15 @@ class GridMap:
         #         pt2 = (int(x0 - 10000*(-b)), int(y0 - 10000*(a)))
         #         cv2.line(image, pt1, pt2, (0,255,0), 3, cv2.LINE_AA)
 
-        # resized = imutils.resize(image, width=800)
+        resized = imutils.resize(mask, width=800)
 
-        # cv2.imshow("test", resized)
-        # cv2.waitKey(1)
+        cv2.imshow("mask", resized)
+        cv2.waitKey(1)
+
+        resized = imutils.resize(image, width=800)
+
+        cv2.imshow("image", resized)
+        cv2.waitKey(1)
 
 def updateLines(newLines, lines, half):
     for coordinate in newLines:
@@ -203,7 +214,6 @@ class Line:
 
             return True
         else:
-            #self.unupdated += 1
             return False
 
 def blueRectangle(image):
@@ -224,12 +234,34 @@ def blueRectangle(image):
     # cv2.waitKey(1)
 
 
+def displayCrack(x, y, length):
+    CELL_SIZE = 200
+    PADDING = 20
+    HEIGHT = CELL_SIZE * 3 + (2 * PADDING)
+    WIDTH = CELL_SIZE * 4 + (2 * PADDING)
+    THICKNESS = 3
 
+    # Create white image
+    image = np.zeros((HEIGHT, WIDTH, 3), np.uint8)
+    cv2.rectangle(image, (0, 0), (WIDTH, HEIGHT), (255, 255, 255), -1)
 
-video = cv2.VideoCapture("/home/vm/Downloads/line.mp4")
-map = GridMap(0, -1)
+    # Draw grid
+    for n in range(5):
+        cv2.line(image, (CELL_SIZE * n + PADDING, PADDING), (CELL_SIZE * n + PADDING, CELL_SIZE * 3 + PADDING), (0, 0, 0), THICKNESS)
+    for n in range(4):
+        cv2.line(image, (PADDING, CELL_SIZE * n + PADDING), (CELL_SIZE * 4 + PADDING, CELL_SIZE * n + PADDING), (0, 0, 0), THICKNESS)
+
+    # Write text
+    cv2.putText(image, str(length) + " cm", (int(CELL_SIZE * (x + 0.3) + PADDING), int(CELL_SIZE * (y + 0.5) + PADDING)), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), THICKNESS)
+
+    cv2.imshow("Crack map", image)
+    cv2.waitKey(0)
+
+video = cv2.VideoCapture("/home/vm/Downloads/underwater.mp4")
+map = GridMap(0, 0)
 #video.set(cv2.CAP_PROP_POS_FRAMES, 700)
+#displayCrack(2, 1, 13.6)
 while (True):
     retval, image = video.read()
     map.update(image)
-    print(str(map.crackx) + " " + str(map.cracky))
+    print(str(map.x) + " " + str(map.y))
