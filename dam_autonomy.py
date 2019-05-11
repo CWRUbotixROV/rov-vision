@@ -1,6 +1,9 @@
 import cv2, time, subprocess
 from pymavlink import mavutil
-from line_follower import LineFollower, Direction
+from line_follower_2 import LineFollower, Direction
+from video import Video
+import multiprocessing as mp
+from multiprocessing import Value
 
 # RC channel IDs (constants)
 RC_CHAN_PITCH = 1
@@ -11,10 +14,10 @@ RC_CHAN_FORWARD = 5
 RC_CHAN_LATERAL = 6
 
 # PWM values
-UP_PWM = 1550
-DOWN_PWM = 1450
-LEFT_PWM = 1450
-RIGHT_PWM = 1550
+UP_PWM = 1500
+DOWN_PWM = 1700
+LEFT_PWM = 1400
+RIGHT_PWM = 1600
 
 # mavproxy.py --master=udpin:192.168.2.1:14540 --out=udpout:192.168.2.2:14540
 
@@ -47,43 +50,66 @@ def go_right():
     set_rc_channel_pwm(RC_CHAN_LATERAL, pwm=RIGHT_PWM)
 
 def stop():
-    for i in range(6):
-        set_rc_channel_pwm(i+1, 1500)
+    for i in range(1,7):
+        if i==RC_CHAN_THROTTLE:
+            set_rc_channel_pwm(RC_CHAN_THROTTLE, 1600)
+        else:
+            set_rc_channel_pwm(i, 1500)
 
-def disarm(_master):
-    _master.mav.command_long_send(1, 1, 400, 0, 0, 0, 0, 0, 0, 0, 0) # disarm
-
-master = mavutil.mavlink_connection('udpin:192.168.2.1:14540')
-# p = subprocess.Popen(['python3', 'follow_line.py'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-master.wait_heartbeat()
-# Should be armed manually from QGroundControl
-# master.mav.command_long_send(1, 1, 400, 0, 1, 0, 0, 0, 0, 0, 0)    # arm
-
-lf = LineFollower(port=4777)
-
-direction = Direction.STOP
-period = 50   # loop period in milliseconds
-tn = 0
-
-try:
-    while True:     # run until stopped with Ctrl-C
-        tn = tn + period
-        direction = lf.next_direction()
-        print(direction)
-        if direction == Direction.UP:
+def motion_child(exit, data):
+    while exit.value == 0:
+        if data.value == Direction.up.value:
             go_up()
-        elif direction == Direction.DOWN:
+        elif data.value == Direction.down.value:
             go_down()
-        elif direction == Direction.LEFT:
+        elif data.value == Direction.left.value:
             go_left()
-        elif direction == Direction.RIGHT:
+        elif data.value == Direction.right.value:
             go_right()
         else:
             stop()
-        time.sleep(tn - int(round(time.time()*1000)))   # ensure that we update the direction at a constant rate
-except KeyboardInterrupt:
-    pass
 
-stop()
-disarm(master)
+if __name__=='__main__':
+    master = mavutil.mavlink_connection('udpin:192.168.2.1:14540')
+
+    master.wait_heartbeat()
+
+    lf = LineFollower()
+    cap = Video(port=4777)
+
+    direction = Direction.down
+
+    print("Beginning autonomy")
+    master.arducopter_arm()
+
+    while not cap.frame_available():
+        continue
+    frame = cap.frame()
+    lf.direction = Direction.down
+    lf.find_start_dir(frame)
+    direction = lf.direction
+    dirval = Value('d', direction.value)
+    g = Value('d', 0)
+    child = mp.Process(target=motion_child, args=(g, dirval))
+    last_dir = direction
+    child.start()
+
+    try:
+        while True:     # run until stopped with Ctrl-C, will change once everything else works
+            frame = cap.frame()
+            lf.determine_find_dir(frame)
+            direction = lf.direction
+            dirval = direction.value
+            
+            print(direction)
+            if cv2.waitKey(1)==ord('p'):
+                cv2.imwrite('underwater.png', frame)
+            last_dir = direction
+    except KeyboardInterrupt:
+        g = Value('d', 1)
+        child.join()
+
+    print("Disarming")
+    stop()
+    master.arducopter_disarm()
+

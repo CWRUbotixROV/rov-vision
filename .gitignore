@@ -2,3 +2,6 @@
 .vscode
 __pycache__
 *.pyc
+mav.parm
+mav.tlog
+mav.tlog.raw
