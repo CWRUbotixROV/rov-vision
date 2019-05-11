@@ -2,6 +2,7 @@ import cv2
 import argparse
 import imutils
 import numpy as np
+import sys
 
 # detects number and type of shapes on an image
 class ShapeDetector:
@@ -57,12 +58,8 @@ def click_and_crop(event, x, y, flags, param):
 
         cv2.imshow("image", image)        
 
-ap = argparse.ArgumentParser()
-ap.add_argument("-i", "--image", required=True, help="Path to image")
-args = vars(ap.parse_args())
-
 def detect_shapes():
-    image = cv2.imread('final_benthic.png', cv2.IMREAD_COLOR)
+    image = cv2.imread(sys.argv[1], cv2.IMREAD_COLOR)
     blank = cv2.imread('blank.png', cv2.IMREAD_COLOR) 
     clone = image.copy()
     cv2.namedWindow("image")
@@ -174,8 +171,6 @@ def detect_shapes():
     #cv2.imwrite('image.png', image)
     #cv2.waitKey(0)
     #return num_shapes
-
-
 
 num_shapes = detect_shapes()
 print(num_shapes)
