@@ -12,8 +12,8 @@ RC_CHAN_FORWARD = 5
 RC_CHAN_LATERAL = 6
 
 # PWM values
-UP_PWM = 1400
-DOWN_PWM = 1550
+UP_PWM = 1500
+DOWN_PWM = 1700
 LEFT_PWM = 1400
 RIGHT_PWM = 1600
 
@@ -48,8 +48,11 @@ def go_right():
     set_rc_channel_pwm(RC_CHAN_LATERAL, pwm=RIGHT_PWM)
 
 def stop():
-    for i in range(6):
-        set_rc_channel_pwm(i+1, 1500)
+    for i in range(1,7):
+        if i==RC_CHAN_THROTTLE:
+            set_rc_channel_pwm(RC_CHAN_THROTTLE, 1600)
+        else:
+            set_rc_channel_pwm(i, 1500)
 
 if __name__=='__main__':
     master = mavutil.mavlink_connection('udpin:192.168.2.1:14540')
@@ -59,15 +62,18 @@ if __name__=='__main__':
     lf = LineFollower()
     cap = Video(port=4777)
 
-    direction = Direction.neutral
+    direction = Direction.down
 
     print("Beginning autonomy")
     master.arducopter_arm()
+    while True:
+        go_right()
+        time.sleep(0.01)
 
     while not cap.frame_available():
             continue
     frame = cap.frame()
-    lf.find_start_dir(frame)
+    lf.direction = Direction.down
     direction = lf.direction
     last_dir = direction
 
