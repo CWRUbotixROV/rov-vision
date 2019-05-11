@@ -2,6 +2,8 @@ import cv2, time, subprocess
 from pymavlink import mavutil
 from line_follower_2 import LineFollower, Direction
 from video import Video
+import multiprocessing as mp
+from multiprocessing import Value
 
 # RC channel IDs (constants)
 RC_CHAN_PITCH = 1
@@ -54,6 +56,19 @@ def stop():
         else:
             set_rc_channel_pwm(i, 1500)
 
+def motion_child(exit, data):
+    while exit.value == 0:
+        if data.value == Direction.up.value:
+            go_up()
+        elif data.value == Direction.down.value:
+            go_down()
+        elif data.value == Direction.left.value:
+            go_left()
+        elif data.value == Direction.right.value:
+            go_right()
+        else:
+            stop()
+
 if __name__=='__main__':
     master = mavutil.mavlink_connection('udpin:192.168.2.1:14540')
 
@@ -66,44 +81,33 @@ if __name__=='__main__':
 
     print("Beginning autonomy")
     master.arducopter_arm()
-    while True:
-        go_right()
-        time.sleep(0.01)
 
     while not cap.frame_available():
-            continue
+        continue
     frame = cap.frame()
     lf.direction = Direction.down
+    lf.find_start_dir(frame)
     direction = lf.direction
+    dirval = Value('d', direction.value)
+    g = Value('d', 0)
+    child = mp.Process(target=motion_child, args=(g, dirval))
     last_dir = direction
+    child.start()
 
     try:
         while True:     # run until stopped with Ctrl-C, will change once everything else works
-            while not cap.frame_available():
-                stop()
             frame = cap.frame()
             lf.determine_find_dir(frame)
             direction = lf.direction
-            if direction != last_dir:
-                # Go back a bit
-                pass
+            dirval = direction.value
             
             print(direction)
-            if direction == Direction.up:
-                go_up()
-            elif direction == Direction.down:
-                go_down()
-            elif direction == Direction.left:
-                go_left()
-            elif direction == Direction.right:
-                go_right()
-            else:
-                stop()
             if cv2.waitKey(1)==ord('p'):
                 cv2.imwrite('underwater.png', frame)
             last_dir = direction
     except KeyboardInterrupt:
-        pass
+        g = Value('d', 1)
+        child.join()
 
     print("Disarming")
     stop()
