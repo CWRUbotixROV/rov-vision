@@ -2,6 +2,7 @@ import cv2, time, subprocess
 from pymavlink import mavutil
 from line_follower_2 import LineFollower, Direction
 from video import Video
+from grid_map import GridMap
 
 # RC channel IDs (constants)
 RC_CHAN_PITCH = 1
@@ -71,6 +72,8 @@ if __name__=='__main__':
     direction = lf.direction
     last_dir = direction
 
+    map = GridMap(frame)
+
     try:
         while True:     # run until stopped with Ctrl-C, will change once everything else works
             while not cap.frame_available():
@@ -96,6 +99,8 @@ if __name__=='__main__':
             if cv2.waitKey(1)==ord('p'):
                 cv2.imwrite('underwater.png', frame)
             last_dir = direction
+
+            map.update(frame)
     except KeyboardInterrupt:
         pass
 

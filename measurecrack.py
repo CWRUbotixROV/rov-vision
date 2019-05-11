@@ -23,10 +23,13 @@ def blueRectangle(image):
 
     # define range of blue color in HSV
     LOWER_BLUE = np.array([90,50,50])
-    UPPER_BLUE = np.array([130,255,255])
+    UPPER_BLUE = np.array([180,255,255])
+
+    LOWER_BLUE = np.array([0, 0, 0])
+    UPPER_BLUE = np.array([255, 80, 80])
 
     # Threshold the HSV image to get only blue colors
-    mask = cv2.inRange(hsv, LOWER_BLUE, UPPER_BLUE)
+    mask = cv2.inRange(image, LOWER_BLUE, UPPER_BLUE)
     
     # Find contours
     contours, hierarchy = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)

@@ -50,8 +50,8 @@ class LineFollower:
 
         # values to determine red color mask
         lower_bg_mask = 0
-        lower_red_mask = 20
-        upper_bg_mask = 3
+        lower_red_mask = 80
+        upper_bg_mask = 40
         upper_red_mask = 255
         
         # values for gaussian blur

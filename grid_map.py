@@ -1,6 +1,8 @@
 import cv2, imutils
 import numpy as np
 import math
+import measurecrack
+from line_follower_2 import LineFollower, Direction
 
 class GridMap:
     hlines = []
@@ -10,9 +12,17 @@ class GridMap:
     cracky = 0
     maxblueratio = 0
 
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
+    def __init__(self, startframe):
+        lf = LineFollower()
+        lf.find_start_dir(startframe)
+        if (lf.direction == Direction.down):
+            self.x = 0
+            self.y = -1
+        else:
+            self.x = -1
+            self.y = 0
+        
+
 
     def update(self, image):
         blurred = cv2.GaussianBlur(image, (5, 5), 0)
@@ -116,18 +126,19 @@ class GridMap:
             self.cracky = self.y
 
         if (self. x == 4 or self.y == 3 or (self.x == 3 and self.y == -1)):
-            length = 0
-            displayCrack(self.crackx, self.cracky, length)
+            cv2.imshow("blue", self.crackimage)
+            cv2.waitKey(0)
+            displayCrack(self.crackx, self.cracky, self.crackimage)
 
         resized = imutils.resize(mask, width=800)
 
-        # cv2.imshow("mask", resized)
-        # cv2.waitKey(1)
+        cv2.imshow("mask", resized)
+        cv2.waitKey(1)
 
-        # resized = imutils.resize(image, width=800)
+        resized = imutils.resize(image, width=800)
 
-        # cv2.imshow("image", resized)
-        # cv2.waitKey(0)
+        cv2.imshow("image", resized)
+        cv2.waitKey(0)
 
 def updateLines(newLines, lines, half):
     # Check each coordinate against each existing line
@@ -202,7 +213,7 @@ def blueRectangle(image):
     # cv2.waitKey(1)
 
 
-def displayCrack(x, y, length):
+def displayCrack(x, y, crackimage):
     '''Displays the length of the crack in the square at x, y'''
     CELL_SIZE = 200
     PADDING = 20
@@ -220,6 +231,9 @@ def displayCrack(x, y, length):
     for n in range(4):
         cv2.line(image, (PADDING, CELL_SIZE * n + PADDING), (CELL_SIZE * 4 + PADDING, CELL_SIZE * n + PADDING), (0, 0, 0), THICKNESS)
 
+    # Find length
+    cv2.imwrite("test.png", crackimage)
+    length = measurecrack.measureCrackPerspective(crackimage)
     # Round length
     length = round(length, 1)
 
@@ -230,7 +244,8 @@ def displayCrack(x, y, length):
     cv2.waitKey(0)
 
 video = cv2.VideoCapture("/home/vm/Downloads/line.mp4")
-map = GridMap(0, -1)
+retval, image = video.read()
+map = GridMap(image)
 #video.set(cv2.CAP_PROP_POS_FRAMES, 780)
 #displayCrack(2, 2, 13.672)
 while (True):
