@@ -1,6 +1,7 @@
 import cv2, imutils
 import numpy as np
 import math
+import colors
 
 def measureCrackRatio(image):
     """ Measures crack using raio method"""
@@ -22,14 +23,13 @@ def blueRectangle(image):
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     # define range of blue color in HSV
-    LOWER_BLUE = np.array([90,50,50])
-    UPPER_BLUE = np.array([180,255,255])
-
-    LOWER_BLUE = np.array([0, 0, 0])
-    UPPER_BLUE = np.array([255, 80, 80])
+    LOWER_BLUE = colors.LOWER_BLUE
+    UPPER_BLUE = colors.UPPER_BLUE
 
     # Threshold the HSV image to get only blue colors
     mask = cv2.inRange(image, LOWER_BLUE, UPPER_BLUE)
+    cv2.imshow("mask", mask)
+    cv2.waitKey(0)
     
     # Find contours
     contours, hierarchy = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -167,3 +167,6 @@ def convertToSlopeInt(line):
     y = sin * rho
     yint = y - (x * slope)
     return slope, yint
+
+image = cv2.imread("pictures-6-10/capture6.PNG")
+print(measureCrackPerspective(image))
