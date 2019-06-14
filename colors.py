@@ -1,5 +1,21 @@
 import numpy as np
+import json
+from enum import Enum
+import cv2
 
 
-LOWER_BLUE = np.array([90,50,50])
-UPPER_BLUE = np.array([180,255,255])
+def setColor(color, lower, upper):
+    with open('colors.txt', 'r') as file:
+        colors = json.load(file)
+    colors[color] = [lower, upper]
+    with open('colors.txt', 'w') as outfile:
+        json.dump(colors, outfile)
+
+def getMask(color, image):
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    with open('colors.txt', 'r') as file:
+        colors = json.load(file)
+    lower, upper = colors[color]
+    return cv2.inRange(hsv, np.array(lower), np.array(upper))
+
+setColor('blue', [0,0,0], [180,255,255])

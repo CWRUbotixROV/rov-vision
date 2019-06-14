@@ -14,12 +14,12 @@ def loadPixel(event, x, y, flags, param):
         y = int((float(width) / SIZE) * y)
         h, s, v = hsv[y][x]
 
-        cv2.setTrackbarPos('H1', 'image', h)
-        cv2.setTrackbarPos('S1', 'image', s)
-        cv2.setTrackbarPos('V1', 'image', v)
-        cv2.setTrackbarPos('H2', 'image', THRESH)
-        cv2.setTrackbarPos('S2', 'image', THRESH)
-        cv2.setTrackbarPos('V2', 'image', THRESH)
+        cv2.setTrackbarPos('H1', 'image', h - THRESH)
+        cv2.setTrackbarPos('S1', 'image', s - THRESH)
+        cv2.setTrackbarPos('V1', 'image', v - THRESH)
+        cv2.setTrackbarPos('H2', 'image', h + THRESH)
+        cv2.setTrackbarPos('S2', 'image', s + THRESH)
+        cv2.setTrackbarPos('V2', 'image', v + THRESH)
 
 
 # Read calibration image
@@ -61,8 +61,8 @@ while(1):
     v1 = cv2.getTrackbarPos('V1','image')
     v2 = cv2.getTrackbarPos('V2','image')
 
-    lower = np.array([h1 - h2, s1 - s2, v1 - v2])
-    upper = np.array([h1 + h2, s1 + s2, v1 + v2])
+    lower = np.array([h1, s1, v1])
+    upper = np.array([h2, s2, v2])
 
     mask = cv2.inRange(hsv, lower, upper)
     resized = imutils.resize(mask, width=SIZE)

@@ -22,12 +22,7 @@ def blueRectangle(image):
     # Convert BGR to HSV
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-    # define range of blue color in HSV
-    LOWER_BLUE = colors.LOWER_BLUE
-    UPPER_BLUE = colors.UPPER_BLUE
-
-    # Threshold the HSV image to get only blue colors
-    mask = cv2.inRange(image, LOWER_BLUE, UPPER_BLUE)
+    mask = colors.getMask('blue', image)
     cv2.imshow("mask", mask)
     cv2.waitKey(0)
     
