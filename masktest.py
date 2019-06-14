@@ -1,8 +1,9 @@
 import cv2
 import numpy as np
 import imutils
+import colors
 
-SIZE = 1200
+SIZE = 800
 
 def nothing(x):
     pass
@@ -24,7 +25,7 @@ def loadPixel(event, x, y, flags, param):
 
 # Read calibration image
 image = cv2.imread("calibrate.png")
-hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
 height, width, channels = image.shape
 
 cv2.namedWindow('image')
@@ -52,6 +53,9 @@ while(1):
     k = cv2.waitKey(1) & 0xFF
     if k == 27:
         break
+    elif k == 115:
+        color = input("Set color: ")
+        colors.setColor(color, [h1, s1, v1], [h2, s2, v2])
 
     # get current positions of four trackbars
     h1 = cv2.getTrackbarPos('H1','image')

@@ -3,6 +3,7 @@ import numpy as np
 import math
 import measurecrack
 from line_follower_2 import LineFollower, Direction
+import colors
 
 class GridMap:
     hlines = []
@@ -13,23 +14,46 @@ class GridMap:
     maxblueratio = 0
 
     def __init__(self, startframe):
-        lf = LineFollower()
-        lf.find_start_dir(startframe)
-        if (lf.direction == Direction.down):
-            self.x = 0
-            self.y = -1
-        else:
-            self.x = -1
-            self.y = 0
+        pass
+        # lf = LineFollower()
+        # lf.find_start_dir(startframe)
+        # if (lf.direction == Direction.down):
+        #     self.x = 0
+        #     self.y = -1
+        # else:
+        #     self.x = -1
+        #     self.y = 0
         
 
 
     def update(self, image):
         blurred = cv2.GaussianBlur(image, (5, 5), 0)
         hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+        grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         LOWER = np.array([0, 0, 0])
         UPPER = np.array([180, 100, 110])
         mask = cv2.inRange(hsv, LOWER, UPPER)
+
+        thresh = cv2.adaptiveThreshold(grey, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 7, 4)
+        resized = imutils.resize(thresh, width=800)
+        cv2.imshow('image', resized)
+        cv2.waitKey(0)
+
+        mask = colors.getMask("black", image)
+        resized = imutils.resize(mask, width=800)
+        cv2.imshow('image', resized)
+        cv2.waitKey(0)
+
+        kernel = np.ones((11, 11), np.uint8)
+        eroded = cv2.erode(mask, kernel)
+        resized = imutils.resize(eroded, width=800)
+        cv2.imshow('image', resized)
+        cv2.waitKey(0)
+
+        threshAndMask = cv2.bitwise_and(thresh, eroded)
+        resized = imutils.resize(threshAndMask, width=800)
+        cv2.imshow('image', resized)
+        cv2.waitKey(0)
 
         # Detect Lines
         lines = cv2.HoughLinesP(mask, 1, np.pi / 180, 50, None, 50, 10)
@@ -242,6 +266,11 @@ def displayCrack(x, y, crackimage):
 
     cv2.imshow("Crack map", image)
     cv2.waitKey(0)
+
+
+image = cv2.imread("calibrate.png")
+map = GridMap(image)
+map.update(image)
 
 video = cv2.VideoCapture("/home/vm/Downloads/line.mp4")
 retval, image = video.read()

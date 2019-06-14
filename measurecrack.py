@@ -164,4 +164,4 @@ def convertToSlopeInt(line):
     return slope, yint
 
 image = cv2.imread("pictures-6-10/capture6.PNG")
-print(measureCrackPerspective(image))
+#print(measureCrackPerspective(image))

@@ -12,10 +12,8 @@ def setColor(color, lower, upper):
         json.dump(colors, outfile)
 
 def getMask(color, image):
-    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
     with open('colors.txt', 'r') as file:
         colors = json.load(file)
     lower, upper = colors[color]
     return cv2.inRange(hsv, np.array(lower), np.array(upper))
-
-setColor('blue', [0,0,0], [180,255,255])
