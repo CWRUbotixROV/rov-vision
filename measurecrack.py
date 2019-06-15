@@ -44,19 +44,12 @@ def blueRectangle(image):
 
 def measureCrackPerspective(image):
     """Measures crack using perspective transformation method"""
-    # define range of color for black grid lines in HSV
-    LOWER_BLACK = np.array([0,0,0])
-    UPPER_BLACK = np.array([180,50,100])
-
-    # Gaussian Blur
-    KERNEL_SIZE = (5, 5)
-    blurredcolor = cv2.GaussianBlur(image, KERNEL_SIZE, 0)
     
-    # Convert BGR to HSV
-    hsv = cv2.cvtColor(blurredcolor, cv2.COLOR_BGR2HSV)
-    
-    # Threshold the HSV image to get only black colors
-    mask = cv2.inRange(hsv, LOWER_BLACK, UPPER_BLACK)
+    # Threshold the image to get only black colors
+    mask = colors.gridLines(image)
+    resized = imutils.resize(mask, width=800)
+    cv2.imshow('grid lines', resized)
+    cv2.waitKey(0)
     
     # Detect lines
     LINE_THRESH = 700
@@ -117,6 +110,10 @@ def measureCrackPerspective(image):
     
     # Perspective transform original image
     warped = cv2.warpPerspective(image, matrix, (IMAGE_SIZE, IMAGE_SIZE))
+
+    resized = imutils.resize(warped, width=800)
+    cv2.imshow('warped', resized)
+    cv2.waitKey(0)
     
     width, height = blueRectangle(warped)
     
@@ -163,5 +160,6 @@ def convertToSlopeInt(line):
     yint = y - (x * slope)
     return slope, yint
 
-image = cv2.imread("pictures-6-10/capture6.PNG")
-#print(measureCrackPerspective(image))
+image = cv2.imread("calibrate.png")
+print(measureCrackPerspective(image))
+print(measureCrackRatio(image))

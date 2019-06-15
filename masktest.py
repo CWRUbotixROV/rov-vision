@@ -3,12 +3,12 @@ import numpy as np
 import imutils
 import colors
 
-SIZE = 800
+SIZE = 650
 
 def nothing(x):
     pass
 
-THRESH = 15
+THRESH = 20
 def loadPixel(event, x, y, flags, param):
     if event == cv2.EVENT_LBUTTONDBLCLK:
         x = int((float(width) / SIZE) * x)
@@ -25,6 +25,8 @@ def loadPixel(event, x, y, flags, param):
 
 # Read calibration image
 image = cv2.imread("calibrate.png")
+video = cv2.VideoCapture("/home/vm/Downloads/line.mp4")
+#retval, image = video.read()
 hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
 height, width, channels = image.shape
 
@@ -56,6 +58,17 @@ while(1):
     elif k == 115:
         color = input("Set color: ")
         colors.setColor(color, [h1, s1, v1], [h2, s2, v2])
+    elif k == 108:
+        color = input("Load color: ")
+        lower, upper = colors.getValues(color)
+        h1, s1, v1 = lower
+        h2, s2, v2 = upper
+        cv2.setTrackbarPos('H1', 'image', h1)
+        cv2.setTrackbarPos('S1', 'image', s1)
+        cv2.setTrackbarPos('V1', 'image', v1)
+        cv2.setTrackbarPos('H2', 'image', h2)
+        cv2.setTrackbarPos('S2', 'image', s2)
+        cv2.setTrackbarPos('V2', 'image', v2)
 
     # get current positions of four trackbars
     h1 = cv2.getTrackbarPos('H1','image')
