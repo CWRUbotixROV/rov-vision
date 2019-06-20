@@ -4,6 +4,8 @@ import imutils
 import numpy as np
 import sys
 
+ROI_SIDE = 800
+
 # detects number and type of shapes on an image
 class ShapeDetector:
     def __init__(self):
@@ -81,7 +83,7 @@ def detect_shapes():
 
     imw = image.shape[0]
     imh = image.shape[1]
-    roi =  image[imw//2-400:imw//2+400, imh//2-400:imh//2+400]
+    roi =  image[(imw-ROI_SIDE)//2:(imw+ROI_SIDE)//2, (imh-ROI_SIDE)//2:(imh+ROI_SIDE)//2]
     resized = imutils.resize(roi, width=300)  # resize to simplify shapes
     ratio = roi.shape[0] / float(resized.shape[0])
 
