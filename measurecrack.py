@@ -162,7 +162,7 @@ def convertToSlopeInt(line):
 
 
 if __name__ == "__main__":
-    image = cv2.imread("crack2.png")
+    image = cv2.imread("crack2.jpg")
     length = measureCrackPerspective(image)
     # Round length
     length = round(length, 1)
