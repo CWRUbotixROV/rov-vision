@@ -3,7 +3,9 @@ import argparse
 import imutils
 import numpy as np
 import sys
-ROI_SIDE = 800
+from video import Video
+
+ROI_SIDE = 600
 
 # detects number and type of shapes on an image
 class ShapeDetector:
@@ -57,24 +59,12 @@ def click_and_crop(event, x, y, flags, param):
             refPt.append((x , y))
             cropping = False
 
-        cv2.imshow("image", image)        
+        # cv2.imshow("image", image)        
 
-def detect_shapes():
-    image = cv2.imread(sys.argv[1], cv2.IMREAD_COLOR)
+def detect_shapes(image):
     blank = cv2.imread('blank.png', cv2.IMREAD_COLOR) 
     clone = image.copy()
-    cv2.namedWindow("image")
-    cv2.setMouseCallback("image", click_and_crop, [clone])
-
-    # while True:
-    #     cv2.imshow("image",image)
-    #     key = cv2.waitKey(1) & 0xFF
-
-    #     if key == ord("r"): # press r to reset and take a new crop
-    #         image = clone.copy()
-
-    #     elif key == ord("c"): # press c to crop image
-    #         break
+    
     if len(refPt) == 2:
         roi = clone[refPt[0][1]:refPt[1][1], refPt[0][0]:refPt[1][0]]
         cv2.imshow("ROI",roi)
@@ -122,8 +112,6 @@ def detect_shapes():
             cv2.drawContours(roi, [c], -1, (255, 0, 0), 2)
             cv2.putText(roi, shape, (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
-            # cv2.imshow("ROI", roi)
-            # cv2.waitKey(0)
     #Draw line, square, circle, and triangle shapes
     #Coordinates determined through trial and error until appropriate proportions of shapes were found
 
@@ -170,12 +158,23 @@ def detect_shapes():
         cv2.waitKey(0)
         return num_shapes
 
-    #cv2.imshow("ROI", roi)
-    #cv2.imwrite('image.png', image)
-    #cv2.waitKey(0)
-    #return num_shapes
 
 if __name__=='__main__':
-    # stream from Video object
-    num_shapes = detect_shapes()
-    print(num_shapes)
+    cap = Video(port=4777)
+    while True:
+        while not cap.frame_available():
+            continue
+        img = cap.frame()
+        imw = img.shape[0]
+        imh = img.shape[1]
+        img = img[(imw-ROI_SIDE)//2:(imw+ROI_SIDE)//2, (imh-ROI_SIDE)//2:(imh+ROI_SIDE)//2]
+        cv2.imshow('img', img)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+        elif cv2.waitKey(1) & 0xFF==ord('c'):
+            num_shapes = detect_shapes(img)
+            print(num_shapes)
+            cv2.waitKey(0)
+            break
+    cv2.destroyAllWindows()
+
