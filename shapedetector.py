@@ -2,6 +2,7 @@ import cv2
 import argparse
 import imutils
 import numpy as np
+import sys
 
 # detects number and type of shapes on an image
 class ShapeDetector:
@@ -57,32 +58,30 @@ def click_and_crop(event, x, y, flags, param):
 
         cv2.imshow("image", image)        
 
-ap = argparse.ArgumentParser()
-ap.add_argument("-i", "--image", required=False, help="Path to image")
-args = vars(ap.parse_args())
-
 def detect_shapes():
-    image = cv2.imread('real_shapes.png', cv2.IMREAD_COLOR)
+    image = cv2.imread(sys.argv[1], cv2.IMREAD_COLOR)
     blank = cv2.imread('blank.png', cv2.IMREAD_COLOR) 
     clone = image.copy()
     cv2.namedWindow("image")
     cv2.setMouseCallback("image", click_and_crop, [clone])
 
-    while True:
-        cv2.imshow("image",image)
-        key = cv2.waitKey(1) & 0xFF
+    # while True:
+    #     cv2.imshow("image",image)
+    #     key = cv2.waitKey(1) & 0xFF
 
-        if key == ord("r"): # press r to reset and take a new crop
-            image = clone.copy()
+    #     if key == ord("r"): # press r to reset and take a new crop
+    #         image = clone.copy()
 
-        elif key == ord("c"): # press c to crop image
-            break
+    #     elif key == ord("c"): # press c to crop image
+    #         break
     if len(refPt) == 2:
         roi = clone[refPt[0][1]:refPt[1][1], refPt[0][0]:refPt[1][0]]
         cv2.imshow("ROI",roi)
         cv2.waitKey(0)
 
-
+    imw = image.shape[0]
+    imh = image.shape[1]
+    roi =  image[imw//2-400:imw//2+400, imh//2-400:imh//2+400]
     resized = imutils.resize(roi, width=300)  # resize to simplify shapes
     ratio = roi.shape[0] / float(resized.shape[0])
 
@@ -92,7 +91,7 @@ def detect_shapes():
     # Here we use an adaptive threshold on the image, since we expect the lighting to be non-uniform.
     ret, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
     cv2.imshow("thresh", thresh)
-    cv2.waitKey(0)
+    # cv2.waitKey(0)
 
     num_shapes = {'square':0,'line':0,'circle':0,'triangle':0}
 
@@ -175,7 +174,7 @@ def detect_shapes():
     #cv2.waitKey(0)
     #return num_shapes
 
-
-
-num_shapes = detect_shapes()
-print(num_shapes)
+if __name__=='__main__':
+    # stream from Video object
+    num_shapes = detect_shapes()
+    print(num_shapes)
