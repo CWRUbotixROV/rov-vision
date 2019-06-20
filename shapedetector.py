@@ -3,6 +3,7 @@ import argparse
 import imutils
 import numpy as np
 import sys
+ROI_SIDE = 800
 
 # detects number and type of shapes on an image
 class ShapeDetector:
@@ -65,21 +66,23 @@ def detect_shapes():
     cv2.namedWindow("image")
     cv2.setMouseCallback("image", click_and_crop, [clone])
 
-    while True:
-        cv2.imshow("image",image)
-        key = cv2.waitKey(1) & 0xFF
+    # while True:
+    #     cv2.imshow("image",image)
+    #     key = cv2.waitKey(1) & 0xFF
 
-        if key == ord("r"): # press r to reset and take a new crop
-            image = clone.copy()
+    #     if key == ord("r"): # press r to reset and take a new crop
+    #         image = clone.copy()
 
-        elif key == ord("c"): # press c to crop image
-            break
+    #     elif key == ord("c"): # press c to crop image
+    #         break
     if len(refPt) == 2:
         roi = clone[refPt[0][1]:refPt[1][1], refPt[0][0]:refPt[1][0]]
         cv2.imshow("ROI",roi)
         cv2.waitKey(0)
 
-
+    imw = image.shape[0]
+    imh = image.shape[1]
+    roi =  image[(imw-ROI_SIDE)//2:(imw+ROI_SIDE)//2, (imh-ROI_SIDE)//2:(imh+ROI_SIDE)//2]
     resized = imutils.resize(roi, width=300)  # resize to simplify shapes
     ratio = roi.shape[0] / float(resized.shape[0])
 
@@ -87,9 +90,9 @@ def detect_shapes():
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
 
     # Here we use an adaptive threshold on the image, since we expect the lighting to be non-uniform.
-    thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 7, 0)
+    ret, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
     cv2.imshow("thresh", thresh)
-    cv2.waitKey(0)
+    # cv2.waitKey(0)
 
     num_shapes = {'square':0,'line':0,'circle':0,'triangle':0}
 
@@ -119,8 +122,8 @@ def detect_shapes():
             cv2.drawContours(roi, [c], -1, (255, 0, 0), 2)
             cv2.putText(roi, shape, (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
-            #cv2.imshow("ROI", roi)
-            #cv2.waitKey(0)
+            # cv2.imshow("ROI", roi)
+            # cv2.waitKey(0)
     #Draw line, square, circle, and triangle shapes
     #Coordinates determined through trial and error until appropriate proportions of shapes were found
 
@@ -172,5 +175,7 @@ def detect_shapes():
     #cv2.waitKey(0)
     #return num_shapes
 
-num_shapes = detect_shapes()
-print(num_shapes)
+if __name__=='__main__':
+    # stream from Video object
+    num_shapes = detect_shapes()
+    print(num_shapes)
