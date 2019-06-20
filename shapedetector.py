@@ -58,7 +58,7 @@ def click_and_crop(event, x, y, flags, param):
         cv2.imshow("image", image)        
 
 ap = argparse.ArgumentParser()
-ap.add_argument("-i", "--image", required=True, help="Path to image")
+ap.add_argument("-i", "--image", required=False, help="Path to image")
 args = vars(ap.parse_args())
 
 def detect_shapes():
@@ -179,3 +179,4 @@ def detect_shapes():
 
 num_shapes = detect_shapes()
 print(num_shapes)
+
