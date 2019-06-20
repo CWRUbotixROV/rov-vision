@@ -3,6 +3,7 @@ import numpy as np
 import math
 import measurecrack
 from line_follower_2 import LineFollower, Direction
+import colors
 
 class GridMap:
     hlines = []
@@ -13,6 +14,7 @@ class GridMap:
     maxblueratio = 0
 
     def __init__(self, startframe):
+        #pass
         lf = LineFollower()
         lf.find_start_dir(startframe)
         if (lf.direction == Direction.down):
@@ -25,14 +27,13 @@ class GridMap:
 
 
     def update(self, image):
-        blurred = cv2.GaussianBlur(image, (5, 5), 0)
-        hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
-        LOWER = np.array([0, 0, 0])
-        UPPER = np.array([180, 100, 110])
-        mask = cv2.inRange(hsv, LOWER, UPPER)
+        mask = colors.gridLines(image)
+        # resized = imutils.resize(mask, width=800)
+        # cv2.imshow('image', resized)
+        # cv2.waitKey(0)
 
         # Detect Lines
-        lines = cv2.HoughLinesP(mask, 1, np.pi / 180, 50, None, 50, 10)
+        lines = cv2.HoughLinesP(mask, 1, np.pi / 180, 100, None, 100, 10)
 
         height, width, channels = image.shape
         horizontal = []
@@ -126,19 +127,19 @@ class GridMap:
             self.cracky = self.y
 
         if (self. x == 4 or self.y == 3 or (self.x == 3 and self.y == -1)):
-            cv2.imshow("blue", self.crackimage)
-            cv2.waitKey(0)
+            # cv2.imshow("blue", self.crackimage)
+            # cv2.waitKey(0)
             displayCrack(self.crackx, self.cracky, self.crackimage)
 
-        resized = imutils.resize(mask, width=800)
+        # resized = imutils.resize(mask, width=800)
 
-        cv2.imshow("mask", resized)
-        cv2.waitKey(1)
+        # cv2.imshow("mask", resized)
+        # cv2.waitKey(1)
 
-        resized = imutils.resize(image, width=800)
+        # resized = imutils.resize(image, width=800)
 
-        cv2.imshow("image", resized)
-        cv2.waitKey(0)
+        # cv2.imshow("image", resized)
+        # cv2.waitKey(1)
 
 def updateLines(newLines, lines, half):
     # Check each coordinate against each existing line
@@ -197,9 +198,7 @@ def blueRectangle(image):
     '''Returns ratio of the image that is blue'''
 
     # Mask blue colors
-    LOWER_BLUE = np.array([0, 0, 0])
-    UPPER_BLUE = np.array([255, 80, 80])
-    mask = cv2.inRange(image, LOWER_BLUE, UPPER_BLUE)
+    mask = colors.getMask("blue", image)
 
     sum = cv2.sumElems(mask)[0] / 255
 
@@ -234,6 +233,7 @@ def displayCrack(x, y, crackimage):
     # Find length
     cv2.imwrite("test.png", crackimage)
     length = measurecrack.measureCrackPerspective(crackimage)
+    #length = 13.534323
     # Round length
     length = round(length, 1)
 
@@ -243,12 +243,15 @@ def displayCrack(x, y, crackimage):
     cv2.imshow("Crack map", image)
     cv2.waitKey(0)
 
-video = cv2.VideoCapture("/home/vm/Downloads/line.mp4")
-retval, image = video.read()
-map = GridMap(image)
-#video.set(cv2.CAP_PROP_POS_FRAMES, 780)
-#displayCrack(2, 2, 13.672)
-while (True):
+
+
+if __name__ == "__main__":
+    video = cv2.VideoCapture("/home/vm/Downloads/line.mp4")
     retval, image = video.read()
-    map.update(image)
-    print(str(map.x) + " " + str(map.y))
+    map = GridMap(image)
+    #video.set(cv2.CAP_PROP_POS_FRAMES, 780)
+    # displayCrack(2, 2, image)
+    while (True):
+        retval, image = video.read()
+        map.update(image)
+        print(str(map.x) + " " + str(map.y))

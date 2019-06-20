@@ -1,6 +1,7 @@
 import cv2, imutils
 import numpy as np
 import math
+import colors
 
 def measureCrackRatio(image):
     """ Measures crack using raio method"""
@@ -21,15 +22,9 @@ def blueRectangle(image):
     # Convert BGR to HSV
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-    # define range of blue color in HSV
-    LOWER_BLUE = np.array([90,50,50])
-    UPPER_BLUE = np.array([180,255,255])
-
-    LOWER_BLUE = np.array([0, 0, 0])
-    UPPER_BLUE = np.array([255, 80, 80])
-
-    # Threshold the HSV image to get only blue colors
-    mask = cv2.inRange(image, LOWER_BLUE, UPPER_BLUE)
+    mask = colors.getMask('blue', image)
+    cv2.imshow("mask", mask)
+    cv2.waitKey(1)
     
     # Find contours
     contours, hierarchy = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -49,19 +44,12 @@ def blueRectangle(image):
 
 def measureCrackPerspective(image):
     """Measures crack using perspective transformation method"""
-    # define range of color for black grid lines in HSV
-    LOWER_BLACK = np.array([0,0,0])
-    UPPER_BLACK = np.array([180,50,100])
-
-    # Gaussian Blur
-    KERNEL_SIZE = (5, 5)
-    blurredcolor = cv2.GaussianBlur(image, KERNEL_SIZE, 0)
     
-    # Convert BGR to HSV
-    hsv = cv2.cvtColor(blurredcolor, cv2.COLOR_BGR2HSV)
-    
-    # Threshold the HSV image to get only black colors
-    mask = cv2.inRange(hsv, LOWER_BLACK, UPPER_BLACK)
+    # Threshold the image to get only black colors
+    mask = colors.gridLines(image)
+    resized = imutils.resize(mask, width=800)
+    cv2.imshow('grid lines', resized)
+    cv2.waitKey(1)
     
     # Detect lines
     LINE_THRESH = 700
@@ -122,6 +110,10 @@ def measureCrackPerspective(image):
     
     # Perspective transform original image
     warped = cv2.warpPerspective(image, matrix, (IMAGE_SIZE, IMAGE_SIZE))
+
+    resized = imutils.resize(warped, width=800)
+    cv2.imshow('warped', resized)
+    cv2.waitKey(1)
     
     width, height = blueRectangle(warped)
     
@@ -167,3 +159,11 @@ def convertToSlopeInt(line):
     y = sin * rho
     yint = y - (x * slope)
     return slope, yint
+
+
+if __name__ == "__main__":
+    image = cv2.imread("crack.png")
+    length = measureCrackPerspective(image)
+    # Round length
+    length = round(length, 1)
+    print(str(length) + " cm")
