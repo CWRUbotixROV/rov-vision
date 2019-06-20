@@ -3,7 +3,6 @@ import argparse
 import imutils
 import numpy as np
 import sys
-
 ROI_SIDE = 800
 
 # detects number and type of shapes on an image
