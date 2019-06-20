@@ -233,6 +233,7 @@ def displayCrack(x, y, crackimage):
     # Find length
     cv2.imwrite("test.png", crackimage)
     length = measurecrack.measureCrackPerspective(crackimage)
+    #length = 13.534323
     # Round length
     length = round(length, 1)
 
@@ -249,7 +250,7 @@ if __name__ == "__main__":
     retval, image = video.read()
     map = GridMap(image)
     #video.set(cv2.CAP_PROP_POS_FRAMES, 780)
-    #displayCrack(2, 2, 13.672)
+    # displayCrack(2, 2, image)
     while (True):
         retval, image = video.read()
         map.update(image)
