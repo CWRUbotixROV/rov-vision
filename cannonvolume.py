@@ -1,3 +1,4 @@
+import numpy as np
 import cv2
 
 class CannonVolume:
@@ -19,7 +20,7 @@ class CannonVolume:
             line = False
 
         elif event == cv2.EVENT_LBUTTONUP:
-            refPt.append[(a , b)]
+            refPt.append((a , b))
             line = True
 
         cv2.line(image,refPt[0],refPt[1],(0,255,0),thickness=1, lineType=8, shift=0)
