@@ -27,7 +27,7 @@ def gridLines(image):
     red = getMask('red', image)
     blue = getMask('blue', image)
     mask = cv2.bitwise_not(cv2.bitwise_or(red, blue))
-    kernel = np.ones((11, 11), np.uint8)
+    kernel = np.ones((15, 15), np.uint8)
     eroded = cv2.erode(mask, kernel)
 
     grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)

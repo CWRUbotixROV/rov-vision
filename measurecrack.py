@@ -160,6 +160,10 @@ def convertToSlopeInt(line):
     yint = y - (x * slope)
     return slope, yint
 
-image = cv2.imread("calibrate.png")
-print(measureCrackPerspective(image))
-print(measureCrackRatio(image))
+
+if __name__ == "__main__":
+    image = cv2.imread("crack2.png")
+    length = measureCrackPerspective(image)
+    # Round length
+    length = round(length, 1)
+    print(str(length) + " cm")

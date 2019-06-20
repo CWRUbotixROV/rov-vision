@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from enum import Enum
 import sys
+import colors
 
 class Direction(Enum):
     neutral = 0
@@ -69,7 +70,7 @@ class LineFollower:
         upper_red = np.array([upper_bg_mask, upper_bg_mask, upper_red_mask])
 
         # apply masks
-        mask_red = cv2.inRange(img, lower_red, upper_red)
+        mask_red = colors.getMask("red", img)
         im_red = cv2.bitwise_and(img, img, mask=mask_red)
         im_red = cv2.GaussianBlur(im_red,(blur_size, blur_size), blur_sigma_x)
 

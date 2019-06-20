@@ -33,7 +33,7 @@ class GridMap:
         # cv2.waitKey(0)
 
         # Detect Lines
-        lines = cv2.HoughLinesP(mask, 1, np.pi / 180, 50, None, 50, 10)
+        lines = cv2.HoughLinesP(mask, 1, np.pi / 180, 100, None, 100, 10)
 
         height, width, channels = image.shape
         horizontal = []
@@ -107,7 +107,7 @@ class GridMap:
                 self.y += line.crossed
                 line.counted = True
             y = line.pos
-            #cv2.line(image, (0, int(y)), (10000, int(y)), (0,255,0), 3, cv2.LINE_AA)
+            cv2.line(image, (0, int(y)), (10000, int(y)), (0,255,0), 3, cv2.LINE_AA)
 
         # Check if any vertical lines have crossed
         for line in self.vlines:
@@ -115,7 +115,7 @@ class GridMap:
                 self.x += line.crossed
                 line.counted = True
             x = line.pos
-            #cv2.line(image, (int(x), 0), (int(x), 10000), (0, 255, 0), 3, cv2.LINE_AA)
+            cv2.line(image, (int(x), 0), (int(x), 10000), (0, 255, 0), 3, cv2.LINE_AA)
 
         # Find the ratio of the image that is blue
         blueratio = blueRectangle(image)

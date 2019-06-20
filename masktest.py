@@ -26,7 +26,7 @@ def loadPixel(event, x, y, flags, param):
 # Read calibration image
 image = cv2.imread("calibrate.png")
 video = cv2.VideoCapture("/home/vm/Downloads/line.mp4")
-#retval, image = video.read()
+retval, image = video.read()
 hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
 height, width, channels = image.shape
 
@@ -84,6 +84,10 @@ while(1):
     mask = cv2.inRange(hsv, lower, upper)
     resized = imutils.resize(mask, width=SIZE)
     cv2.imshow('image', resized)
+
+    gridlines = colors.gridLines(image)
+    resized = imutils.resize(gridlines, width=SIZE)
+    cv2.imshow('Grid Lines', resized)
 
 
 
