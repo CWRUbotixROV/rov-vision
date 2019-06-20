@@ -62,7 +62,7 @@ ap.add_argument("-i", "--image", required=False, help="Path to image")
 args = vars(ap.parse_args())
 
 def detect_shapes():
-    image = cv2.imread('final_benthic.png', cv2.IMREAD_COLOR)
+    image = cv2.imread('real_shapes.png', cv2.IMREAD_COLOR)
     blank = cv2.imread('blank.png', cv2.IMREAD_COLOR) 
     clone = image.copy()
     cv2.namedWindow("image")
@@ -90,7 +90,7 @@ def detect_shapes():
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
 
     # Here we use an adaptive threshold on the image, since we expect the lighting to be non-uniform.
-    thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 7, 0)
+    ret, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
     cv2.imshow("thresh", thresh)
     cv2.waitKey(0)
 
@@ -122,8 +122,8 @@ def detect_shapes():
             cv2.drawContours(roi, [c], -1, (255, 0, 0), 2)
             cv2.putText(roi, shape, (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
-            #cv2.imshow("ROI", roi)
-            #cv2.waitKey(0)
+            # cv2.imshow("ROI", roi)
+            # cv2.waitKey(0)
     #Draw line, square, circle, and triangle shapes
     #Coordinates determined through trial and error until appropriate proportions of shapes were found
 
@@ -179,4 +179,3 @@ def detect_shapes():
 
 num_shapes = detect_shapes()
 print(num_shapes)
-
