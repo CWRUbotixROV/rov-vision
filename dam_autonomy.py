@@ -71,50 +71,50 @@ def motion_child(exit, data):
             stop()
 
 if __name__=='__main__':
-    master = mavutil.mavlink_connection('udpin:192.168.2.1:14540')
+    # master = mavutil.mavlink_connection('udpin:192.168.2.1:14540')
 
-    master.wait_heartbeat()
+    # master.wait_heartbeat()
 
     lf = LineFollower()
     cap = Video(port=4777)
 
-    direction = Direction.down
+    # direction = Direction.down
 
     print("Beginning autonomy")
-    master.arducopter_arm()
+    # master.arducopter_arm()
 
     while not cap.frame_available():
         continue
-    frame = cap.frame()
-    lf.direction = Direction.down
-    lf.find_start_dir(frame)
-    direction = lf.direction
-    dirval = Value('d', direction.value)
-    g = Value('d', 0)
-    child = mp.Process(target=motion_child, args=(g, dirval))
-    last_dir = direction
-    child.start()
+    # frame = cap.frame()
+    # lf.direction = Direction.down
+    # lf.find_start_dir(frame)
+    # direction = lf.direction
+    # dirval = Value('d', direction.value)
+    # g = Value('d', 0)
+    # child = mp.Process(target=motion_child, args=(g, dirval))
+    # last_dir = direction
+    # child.start()
 
     map = GridMap(frame)
 
     try:
         while True:     # run until stopped with Ctrl-C, will change once everything else works
             frame = cap.frame()
-            lf.determine_find_dir(frame)
-            direction = lf.direction
-            dirval = direction.value
+            # lf.determine_find_dir(frame)
+            # direction = lf.direction
+            # dirval = direction.value
             
-            print(direction)
-            if cv2.waitKey(1)==ord('p'):
-                cv2.imwrite('underwater.png', frame)
-            last_dir = direction
+            # print(direction)
+            # if cv2.waitKey(1)==ord('p'):
+            #     cv2.imwrite('underwater.png', frame)
+            # last_dir = direction
 
             map.update(frame)
     except KeyboardInterrupt:
         g = Value('d', 1)
         child.join()
 
-    print("Disarming")
-    stop()
-    master.arducopter_disarm()
+    # print("Disarming")
+    # stop()
+    # master.arducopter_disarm()
 

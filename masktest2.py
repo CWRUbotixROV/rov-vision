@@ -2,8 +2,6 @@ import cv2
 import numpy as np
 import imutils
 import colors
-from video import Video
-import argparse
 
 SIZE = 650
 
@@ -24,24 +22,11 @@ def loadPixel(event, x, y, flags, param):
         cv2.setTrackbarPos('S2', 'image', s + THRESH)
         cv2.setTrackbarPos('V2', 'image', v + THRESH)
 
-parser = argparse.ArgumentParser()
-parser.add_argument("-v", "--video")
-args = parser.parse_args()
-if args.video:
-    v = True
-else:
-    v = False
 
 # Read calibration image
-if v:
-    cap = Video(port=4777)
-    while not cap.frame_available():
-        continue
-    image = cap.frame()
-else:
-    image = cv2.imread("calibrate.png")
-    # video = cv2.VideoCapture("/home/vm/Downloads/line.mp4")
-    # retval, image = video.read()
+image = cv2.imread("calibrate.png")
+# video = cv2.VideoCapture("/home/vm/Downloads/line.mp4")
+# retval, image = video.read()
 hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
 height, width, channels = image.shape
 
@@ -67,8 +52,6 @@ cv2.setTrackbarPos('V2', 'image', 255)
 
 
 while(1):
-    if v:
-        image = cap.frame()
     k = cv2.waitKey(1) & 0xFF
     if k == 27:
         break

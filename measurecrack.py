@@ -24,7 +24,7 @@ def blueRectangle(image):
 
     mask = colors.getMask('blue', image)
     cv2.imshow("mask", mask)
-    cv2.waitKey(0)
+    cv2.waitKey(1)
     
     # Find contours
     contours, hierarchy = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -49,7 +49,7 @@ def measureCrackPerspective(image):
     mask = colors.gridLines(image)
     resized = imutils.resize(mask, width=800)
     cv2.imshow('grid lines', resized)
-    cv2.waitKey(0)
+    cv2.waitKey(1)
     
     # Detect lines
     LINE_THRESH = 700
@@ -113,7 +113,7 @@ def measureCrackPerspective(image):
 
     resized = imutils.resize(warped, width=800)
     cv2.imshow('warped', resized)
-    cv2.waitKey(0)
+    cv2.waitKey(1)
     
     width, height = blueRectangle(warped)
     
@@ -162,7 +162,7 @@ def convertToSlopeInt(line):
 
 
 if __name__ == "__main__":
-    image = cv2.imread("crack2.jpg")
+    image = cv2.imread("crack.png")
     length = measureCrackPerspective(image)
     # Round length
     length = round(length, 1)

@@ -107,7 +107,7 @@ class GridMap:
                 self.y += line.crossed
                 line.counted = True
             y = line.pos
-            cv2.line(image, (0, int(y)), (10000, int(y)), (0,255,0), 3, cv2.LINE_AA)
+            #cv2.line(image, (0, int(y)), (10000, int(y)), (0,255,0), 3, cv2.LINE_AA)
 
         # Check if any vertical lines have crossed
         for line in self.vlines:
@@ -115,7 +115,7 @@ class GridMap:
                 self.x += line.crossed
                 line.counted = True
             x = line.pos
-            cv2.line(image, (int(x), 0), (int(x), 10000), (0, 255, 0), 3, cv2.LINE_AA)
+            #cv2.line(image, (int(x), 0), (int(x), 10000), (0, 255, 0), 3, cv2.LINE_AA)
 
         # Find the ratio of the image that is blue
         blueratio = blueRectangle(image)
@@ -127,19 +127,19 @@ class GridMap:
             self.cracky = self.y
 
         if (self. x == 4 or self.y == 3 or (self.x == 3 and self.y == -1)):
-            cv2.imshow("blue", self.crackimage)
-            cv2.waitKey(0)
+            # cv2.imshow("blue", self.crackimage)
+            # cv2.waitKey(0)
             displayCrack(self.crackx, self.cracky, self.crackimage)
 
-        resized = imutils.resize(mask, width=800)
+        # resized = imutils.resize(mask, width=800)
 
-        cv2.imshow("mask", resized)
-        cv2.waitKey(1)
+        # cv2.imshow("mask", resized)
+        # cv2.waitKey(1)
 
-        resized = imutils.resize(image, width=800)
+        # resized = imutils.resize(image, width=800)
 
-        cv2.imshow("image", resized)
-        cv2.waitKey(1)
+        # cv2.imshow("image", resized)
+        # cv2.waitKey(1)
 
 def updateLines(newLines, lines, half):
     # Check each coordinate against each existing line
@@ -244,13 +244,13 @@ def displayCrack(x, y, crackimage):
 
 
 
-
-video = cv2.VideoCapture("/home/vm/Downloads/line.mp4")
-retval, image = video.read()
-map = GridMap(image)
-#video.set(cv2.CAP_PROP_POS_FRAMES, 780)
-#displayCrack(2, 2, 13.672)
-while (True):
+if __name__ == "__main__":
+    video = cv2.VideoCapture("/home/vm/Downloads/line.mp4")
     retval, image = video.read()
-    map.update(image)
-    print(str(map.x) + " " + str(map.y))
+    map = GridMap(image)
+    #video.set(cv2.CAP_PROP_POS_FRAMES, 780)
+    #displayCrack(2, 2, 13.672)
+    while (True):
+        retval, image = video.read()
+        map.update(image)
+        print(str(map.x) + " " + str(map.y))
