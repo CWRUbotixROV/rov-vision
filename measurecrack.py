@@ -161,9 +161,28 @@ def convertToSlopeInt(line):
     return slope, yint
 
 
-if __name__ == "__main__":
-    image = cv2.imread("crack.png")
-    length = measureCrackPerspective(image)
-    # Round length
-    length = round(length, 1)
-    print(str(length) + " cm")
+
+
+if __name__=='__main__':
+    cap = Video(port=4777)
+    ready = False
+    while True:
+        while not cap.frame_available():
+            continue
+        if not ready:
+            img = cap.frame()
+        cv2.imshow('img', img)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+        elif cv2.waitKey(1) & 0xFF==ord('c'):
+            ready = True
+            break
+        elif (cv2.waitKey(1) & 0xFF==ord('y')) and ready:
+            length = measureCrackPerspective(img)
+            # Round length
+            length = round(length, 1)
+            print(str(length) + " cm")
+            break
+        elif (cv2.waitKey(1) & 0xFF==ord('n')) and ready:
+            ready = False
+cv2.destroyAllWindows()
