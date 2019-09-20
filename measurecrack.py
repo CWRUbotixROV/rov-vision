@@ -2,6 +2,7 @@ import cv2, imutils
 import numpy as np
 import math
 import colors
+from video import Video
 
 def measureCrackRatio(image):
     """ Measures crack using raio method"""
@@ -161,9 +162,34 @@ def convertToSlopeInt(line):
     return slope, yint
 
 
-if __name__ == "__main__":
-    image = cv2.imread("crack.png")
-    length = measureCrackPerspective(image)
-    # Round length
-    length = round(length, 1)
-    print(str(length) + " cm")
+
+
+if __name__=='__main__':
+    cap = Video(port=4777)
+    ready = False
+    while not cap.frame_available():
+        continue
+    print("go")
+    img = cap.frame()
+    cv2.imshow('img', img)
+    cv2.waitKey(0)
+    while True:
+        k = cv2.waitKey(1) & 0xFF
+        if not ready:
+            img = cap.frame()
+            # resized = imutils.resize(img, width=600)
+            # cv2.imshow('img', resized)
+        if k == ord('q'):
+            break
+        elif k & 0xFF==ord('c'):
+            ready = True
+            cv2.imshow('img', img)
+        elif (k==ord('y')) and ready:
+            length = measureCrackPerspective(img)
+            # Round length
+            length = round(length, 1)
+            print(str(length) + " cm")
+            break
+        elif (k==ord('n')) and ready:
+            ready = False
+cv2.destroyAllWindows()
