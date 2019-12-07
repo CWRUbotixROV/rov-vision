@@ -1,4 +1,4 @@
-#include "ShapeDetector.h"
+#include "shapedetector.h"
 #include <string>
 
 class ShapeDetector
@@ -11,8 +11,11 @@ class ShapeDetector
         // perimeter
         double::peri = cv2.arcLength(c, True);   
         //use RDP algorithm to simplify shape
-        double::approx = cv2.approxPolyDP(c, 0.04 * peri, True);  
-
+        //std::vector<std::vector<cv::Point> > contours;
+        //std::vector<cv::Point> approx;
+        c::approxPolyDP(c,approx,0.04 * peri, True);  
+        
+        
         // Check what shape is in image
         // Shapes can only be square, triangle, line, or circle
         std::cout << (len(approx));
@@ -22,26 +25,27 @@ class ShapeDetector
         double::ARLOWER = (4/3);
 
         // Check if number of sides equals 2,3 or 4 which correspond to line, triangle and square respectively
-        if len(approx)==2{
+        if approx.size() ==2{
             shape = "line";
         }
-        elif len(approx)==3{
+        else if approx.size() ==3{
             shape = "triangle";
         }
         // Check if square or line
-        elif len(approx)==4{  
+        else if approx.size() ==4{  
             Rect::rectangle = boundingRect(approx);
             double::ar = rectangle.width/float(rectangle.height);
             print(ar);
             area = cv2.contourArea(c)
             if area/float(rectangle.width*rectangle.height) <= AREARATIO or ar <= ARUPPER or ar >= ARLOWER:
-                shape = "line";
-            else:
-                shape = "square"
+               { shape = "line";}
+            else
+                {shape = "square";}
         }
-        else:
-            shape = 'circle'   
-
+        else
+        {
+            shape = 'circle';   
+        }
         return shape
 
     }
