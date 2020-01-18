@@ -10,7 +10,7 @@ class ShapeDetector:
     def detect(self, c):
         shape = 'unidentified'
         # perimeter
-        double::peri = double arcLength(c, True)   
+        peri = cv2.arcLength(c, True)
         # use RDP algorithm to simplify shape
         approx = cv2.approxPolyDP(c, 0.04 * peri, True)   
 
