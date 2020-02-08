@@ -23,9 +23,11 @@ def loadPixel(event, x, y, flags, param):
         cv2.setTrackbarPos('S2', 'image', s + THRESH)
         cv2.setTrackbarPos('V2', 'image', v + THRESH)
 
-image = cv2.imread("images/transect.png")
-# video = cv2.VideoCapture("/home/vm/Downloads/line.mp4")
-# retval, image = video.read()
+parser = argparse.ArgumentParser()
+parser.add_argument('file_name', type=str)
+args = parser.parse_args()
+
+image = cv2.imread('images/' + args.file_name)
 hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
 height, width, channels = image.shape
 
@@ -84,9 +86,9 @@ while(1):
     resized = imutils.resize(mask, width=SIZE)
     cv2.imshow('image', resized)
 
-    gridlines = colors.gridLines(image)
-    resized = imutils.resize(gridlines, width=SIZE)
-    cv2.imshow('Grid Lines', resized)
+    # gridlines = colors.gridLines(image)
+    # resized = imutils.resize(gridlines, width=SIZE)
+    # cv2.imshow('Grid Lines', resized)
 
 
 
