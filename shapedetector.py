@@ -11,15 +11,8 @@ class ShapeDetector:
     def detect(self, c):
     # defines shape parameters to differentiate shapes
         shape = 'unidentified'
-        peri = cv2.arcLength(c, True)   # perimeter
         approx = cv2.approxPolyDP(c, 0.04*peri, True)   # use RDP algorithm to simplify shape
 
-        print(len(approx))
-        if len(approx)==2:
-            shape = 'line'
-        elif len(approx)==3:
-            shape = 'triangle'
-        elif len(approx)==4:    # could be square or line
             (x, y, w, h) = cv2.boundingRect(approx)
             ar = w/float(h)
             print(ar)
