@@ -1,7 +1,7 @@
 # Editing Masks
 `masktest.py` is used to set mask values which are stored in `colors.txt`. Put the image you want to calibrate to in the `images` folder. Then run `python3 masktest.py filename.png`. Press `esc` to exit the program.
 ### Adjusting Mask Values
-The sliders adjust the range of colors in the mask using HSV color space. To load a color from the calibration image, double click a specific point of the calibration image. This will set the mask values to the color selected.
+The sliders adjust the range of colors in the mask using HLS color space. To load a color from the calibration image, double click a specific point of the calibration image. This will set the mask values to the color selected.
 ### Saving a Mask
 To save a mask, type `s`, then type the name of the color in the command line and hit enter.
 ### Loading a Mask
