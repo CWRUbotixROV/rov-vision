@@ -58,10 +58,10 @@ while(1):
         break
     elif k == 115:
         color = input("Set color: ")
-        colors.setColor(color, [h1, s1, v1], [h2, s2, v2])
+        colors.set_color(color, [h1, s1, v1], [h2, s2, v2])
     elif k == 108:
         color = input("Load color: ")
-        lower, upper = colors.getValues(color)
+        lower, upper = colors.get_values(color)
         h1, s1, v1 = lower
         h2, s2, v2 = upper
         cv2.setTrackbarPos('H1', 'image', h1)

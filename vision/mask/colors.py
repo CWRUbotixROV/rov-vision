@@ -2,30 +2,34 @@ import numpy as np
 import json
 from enum import Enum
 import cv2
+import pkgutil
+
+def get_data():
+    data = pkgutil.get_data(__name__, "colors.txt")
+    json_data = json.loads(data.decode())
+    return json_data
 
 
-def setColor(color, lower, upper):
+def set_color(color, lower, upper):
     with open('colors.txt', 'r') as file:
         colors = json.load(file)
     colors[color] = [lower, upper]
     with open('colors.txt', 'w') as outfile:
         json.dump(colors, outfile)
 
-def getMask(color, image):
+def get_mask(color, image):
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
-    with open('colors.txt', 'r') as file:
-        colors = json.load(file)
+    colors = get_data()
     lower, upper = colors[color]
     return cv2.inRange(hsv, np.array(lower), np.array(upper))
 
-def getValues(color):
-    with open('colors.txt', 'r') as file:
-        colors = json.load(file)
+def get_values(color):
+    colors = get_data()
     return colors[color]
 
-def gridLines(image):
-    red = getMask('red', image)
-    blue = getMask('blue', image)
+def grid_lines(image):
+    red = get_mask('red', image)
+    blue = get_mask('blue', image)
     mask = cv2.bitwise_not(cv2.bitwise_or(red, blue))
     kernel = np.ones((15, 15), np.uint8)
     eroded = cv2.erode(mask, kernel)
