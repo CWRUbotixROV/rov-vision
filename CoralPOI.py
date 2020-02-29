@@ -12,10 +12,13 @@ class CoralPOI:
         # perimeter
         peri = cv2.arcLength(c, True)
         # use RDP algorithm to simplify shape
-        approx = cv2.approxPolyDP(c, 0.04 * peri, True)   
+        approx = cv2.approxPolyDP(c, 0.04 * peri, True)  
+        hull = cv2.convexHull(c, returnPoints = False)
+        defects = cv2.convexityDefects(c,hull)
 
         # Check what shape is in image
         # Shapes can only be square, triangle, line, or circle
+        print(len(defects))
         print(len(approx))
         
         AREARATIO = 0.4
@@ -23,20 +26,20 @@ class CoralPOI:
         ARLOWER = (1/0.75)
 
         # Check if number of sides equals 2,3 or 4 which correspond to line, triangle and square respectively
-        if len(approx)==2:
-            shape = 'line'
-        elif len(approx)==3:
-            shape = 'triangle'
+        if len(defects)<=5:
+            shape = 'coral'
+        elif len(defects)<=10:
+            shape = 'star'
         # Check if square or line
-        elif len(approx)==4:    
+        elif len(defects)==4:    
             (x, y, w, h) = cv2.boundingRect(approx)
             ar = w/float(h)
             print(ar)
             area = cv2.contourArea(c)
             if area/float(w*h) <= AREARATIO or ar <= ARUPPER or ar >= ARLOWER:
-                shape = 'line'
+                shape = 'coral'
             else:
-                shape = 'square'
+                shape = 'star'
         else:
             shape = 'circle'   
 
@@ -103,7 +106,7 @@ def detect_shapes():
         M = cv2.moments(c)
 
         # ignore contours that are too small to be species
-        UPPERCONTOURTHRESH = 0.25
+        UPPERCONTOURTHRESH = 0.5
         LOWERCONTOURTHRESH = 0.002
 
         if c.shape[0] > 2 and\
