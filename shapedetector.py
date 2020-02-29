@@ -11,20 +11,21 @@ class ShapeDetector:
     def detect(self, c):
     # defines shape parameters to differentiate shapes
         shape = 'unidentified'
-        approx = cv2.approxPolyDP(c, 0.04*peri, True)   # use RDP algorithm to simplify shape
+        cv2.convexity
+        #approx = cv2.approxPolyDP(c, 0.04*peri, True)   # use RDP algorithm to simplify shape
 
-            (x, y, w, h) = cv2.boundingRect(approx)
-            ar = w/float(h)
-            print(ar)
-            area = cv2.contourArea(c)
-            if area/float(w*h) <= 0.4 or ar <= 0.8 or ar >= 1/0.8:
-                shape = 'line'
-            else:
-                shape = 'square'
-        else:
-            shape = 'circle'    # shapes can only be square, triangle, line, or circle
+            #(x, y, w, h) = cv2.boundingRect(approx)
+            #ar = w/float(h)
+            #print(ar)
+            #area = cv2.contourArea(c)
+            #if area/float(w*h) <= 0.4 or ar <= 0.8 or ar >= 1/0.8:
+            #    shape = 'line'
+            #else:
+            #    shape = 'square'
+        #else:
+            #shape = 'circle'    # shapes can only be square, triangle, line, or circle
 
-        return shape
+        #return shape
 
     def add_shape(self, shape, d):
     # counts numbers of shapes
