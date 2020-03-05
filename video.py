@@ -33,16 +33,18 @@ class Video():
         video_source (string): Udp source ip and port
     """
 
-    def __init__(self, port=5600):
+    def __init__(self, port=5600, appsink=0):
         """Summary
 
         Args:
             port (int, optional): UDP port
+            appsink (int, optional): appsink number
         """
 
         Gst.init(None)
 
         self.port = port
+        self.appsink = appsink
         self._frame = None
 
         # [Software component diagram](https://www.ardusub.com/software/components.html)
@@ -87,7 +89,7 @@ class Video():
         command = ' '.join(config)
         self.video_pipe = Gst.parse_launch(command)
         self.video_pipe.set_state(Gst.State.PLAYING)
-        self.video_sink = self.video_pipe.get_by_name('appsink0')
+        self.video_sink = self.video_pipe.get_by_name('appsink{}'.format(self.appsink))
 
     @staticmethod
     def gst_to_opencv(sample):
@@ -137,7 +139,7 @@ class Video():
                 self.video_decode,
                 self.video_sink_conf
             ])
-
+        
         self.video_sink.connect('new-sample', self.callback)
 
     def callback(self, sink):
