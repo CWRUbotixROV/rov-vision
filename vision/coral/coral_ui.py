@@ -17,13 +17,14 @@ class Coral:
         cv2.imshow("Cropped Image", image_cropped)
         cv2.moveWindow("Cropped Image", 700, 0)
         cv2.waitKey(0)
+
         self.before_image = image_cropped
 
     def display_changes(self, image):
         cv2.imshow("Image Changes", image)
         cv2.waitKey(0)
 
-test_image = cv2.imread("/Users/georgiamartinez/Desktop/rov-vision/images/coral/1/1.jpg", 1)
+test_image = cv2.imread("coral_test.jpg", 1)
 
 test = Coral(test_image)
 test.crop_before_image(test_image)
