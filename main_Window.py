@@ -1,48 +1,67 @@
 from tkinter import*
 
-# creating button for autonomous mapping
-window = Tk()
-window.title("welcome")
-window.geometry('600x600')
-lbl = Label(window, text = "Autonomous Mapping")
-lbl.grid(column=0, row=0)
-btn = Button(window, text='Click Me')
-btn.grid(column=1, row=0)
+def run(stream):
+    
+    window = Tk()
+    window.title("welcome")
+    window.geometry('600x600')
+    window.configure(width =50,height = 50, bg='blue')
 
-# creating button for non-autonomous mapping
-lbl = Label(window, text = "Non-autonomous Mapping")
-lbl.grid(column=0, row=2)
-btn = Button(window, text='Click Me')
-btn.grid(column=1, row=2)
+    #creating butoon for autonomous mapping 
+    add_label(window, text = "Autonomous Mapping",  bg = 'red', fg ='white', column =0, row =7)
+    def clicked():
+        pass
+    add_button(window, text='Click Me', bg = 'white', fg ='red', command = clicked, column=1, row=0 )
+    
+    # creating button for non-autonomous mapping
+    add_label(window, text = "Non-autonomous Mapping", bg = 'white', fg ='red',column=0, row=2 )
+    def clicked():
+        pass
+    add_button(window, text='Click Me', bg = "red", fg = "white", command= clicked,column=1, row=2 )
 
-# creating a button for Before coral photo
-lbl = Label(window, text = "Before Coral Photo")
-lbl.grid(column=0, row=3)
-btn = Button(window, text='Click Me')
-btn.grid(column=1, row=3)
+    # creating a button for Before coral photo
+    add_label(window, text = "Before Coral Photo", bg = 'red', fg ='white',column=0, row=3 )
+    def clicked():
+        pass
+    add_button( window, text='Click Me', bg = "white", fg = "red", command= clicked,column=1, row=3)
 
-# creating a button for After Coral Photo
-lbl = Label(window, text = "After Coral Photo")
-lbl.grid(column=0, row=4)
-btn = Button(window, text='Click Me')
-btn.grid(column=1, row=4)
+    # creating a button for After Coral Photo
+    add_label(window, text = "After Coral Photo", bg = 'white', fg ='red',column=0, row=4 )
+    def clicked():
+        pass
+    add_button(window, text='Click Me', bg= "red",fg = "white", command = clicked, column=1, row=4)
+  
+    # creating a button for Capture Subway Car
+    add_label(window, text = "Capture Subway Car", bg = 'red', fg ='white', column=0, row=5)
+    def clicked():
+        pass
+    add_button(window, text='Click Me', bg = 'white', fg = 'red', command= clicked, column=1, row=5)
+    
+    # creating a button for Stitch Subway Car
+    add_label(window, text = "Stitch Subway Car", bg = 'white', fg ='red', column=0, row=6)
+    def clicked():
+        pass
+    add_button(window, text='Click Me', bg = 'red', fg = 'white', command= clicked, column=1, row=6)
+    
+    # creating a button for Switch Camera
+    add_label(window, text = "Switch Camera", bg = 'red', fg ='white', column=0, row=7)
+    def clicked():
+        pass
+    add_button(window, text='Click Me', bg = 'white', fg ='red', command = clicked, column=1, row=7)
+         
+    window.mainloop()
 
-# creating a button for Capture Subway Car
-lbl = Label(window, text = "Capture Subway Car")
-lbl.grid(column=0, row=5)
-btn = Button(window, text='Click Me')
-btn.grid(column=1, row=5)
+def add_button(window, text, bg, fg, command, column, row):
+    btn = Button(window, text, bg, fg, command)
+    btn.grid(column, row)
+def add_label(window, text , bg , fg, row, column ):
+    lbl = Label(window, text , bg , fg )
+    lbl.grid(row,column)
 
-# creating a button for Stitch Subway Car
-lbl = Label(window, text = "Stitch Subway Car")
-lbl.grid(column=0, row=6)
-btn = Button(window, text='Click Me')
-btn.grid(column=1, row=6)
 
-# creating a button for Switch Camera
-lbl = Label(window, text = "Switch Camera")
-lbl.grid(column=0, row=7)
-btn = Button(window, text='Click Me')
-btn.grid(column=1, row=7)
 
-window.mainloop()
+
+    
+
+
+    
