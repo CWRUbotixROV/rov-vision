@@ -10,9 +10,9 @@ using namespace cv;
 using namespace std;
 
 const char* keys =
-    "{ help h |                  | Print help message. }"
-    "{ input1 | coral_before.png          | Path to input image 1. }"
-    "{ input2 | coral_after.png | Path to input image 2. }";
+    "{@input1 | coral_before.png          | Path to input image 1. }"
+    "{@input2 | coral_after.png | Path to input image 2. }"
+    "{help |                  | Print help message. }";
 
 // Calculate the the Contours for the coral and throw out contours that are too small
 void calculateCoralContours(Mat img, vector<vector<Point> > *contours, vector<Vec4i> *hierarchy, 
@@ -82,8 +82,13 @@ int main( int argc, char* argv[] )
 {
     CommandLineParser parser( argc, argv, keys );
 
-    Mat img1 = imread( samples::findFile( parser.get<String>("input1") ), IMREAD_COLOR );
-    Mat img2 = imread( samples::findFile( parser.get<String>("input2") ), IMREAD_COLOR );
+    if (parser.has("help")) {
+        parser.printMessage();
+        return 0;
+    }
+
+    Mat img1 = imread( samples::findFile( parser.get<String>(0) ), IMREAD_COLOR );
+    Mat img2 = imread( samples::findFile( parser.get<String>(1) ), IMREAD_COLOR );
     
     if ( img1.empty() || img2.empty() )
     {
@@ -152,8 +157,9 @@ int main( int argc, char* argv[] )
     Mat afterTotal = Mat::zeros(img2.size(), CV_8UC1);
     Mat afterTotalExpanded = Mat::zeros(img2.size(), CV_8UC1);
 
-    drawMultipleContours(contoursHealthy2, hierarchyHealthy2, afterHealth, afterTotal, afterTotalExpanded, 20);
-    drawMultipleContours(contoursBleach2, hierarchyBleach2, afterBleach, afterTotal, afterTotalExpanded, 20);
+    int expandAmount = 30;
+    drawMultipleContours(contoursHealthy2, hierarchyHealthy2, afterHealth, afterTotal, afterTotalExpanded, expandAmount);
+    drawMultipleContours(contoursBleach2, hierarchyBleach2, afterBleach, afterTotal, afterTotalExpanded, expandAmount);
 
     // Transfrom before coral onto after picture and create masks 
     Mat beforeHealth = Mat::zeros(img2.size(), CV_8UC1);
@@ -164,8 +170,8 @@ int main( int argc, char* argv[] )
     transformContours(H, &contoursHealthy1);
     transformContours(H, &contoursBleach1);
 
-    drawMultipleContours(contoursHealthy1, hierarchyHealthy1, beforeHealth, beforeTotal, beforeTotalExpanded, 20);
-    drawMultipleContours(contoursBleach1, hierarchyBleach1, beforeBleach, beforeTotal, beforeTotalExpanded, 20);
+    drawMultipleContours(contoursHealthy1, hierarchyHealthy1, beforeHealth, beforeTotal, beforeTotalExpanded, expandAmount);
+    drawMultipleContours(contoursBleach1, hierarchyBleach1, beforeBleach, beforeTotal, beforeTotalExpanded, expandAmount);
     
     // Combine masks to create new masks for growth, damage, bleaching, and recovery
     Mat growth = Mat::zeros(img2.size(), CV_8UC1);
