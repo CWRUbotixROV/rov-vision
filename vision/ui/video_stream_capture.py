@@ -3,10 +3,9 @@ import numpy as np
 
 class Video_Stream_Capture:
 
-    select = []
     index_of_select = 0
     videos = []
-    frame = null
+    frame = None
     file_paths = []
 
     def __init__(self, file_paths, select):
@@ -16,11 +15,19 @@ class Video_Stream_Capture:
         self.select = select
 
     def next(self):
-        if (len(select) > index_of_select):
+        if ((len(videos) - 1) > index_of_select):
             index_of_select = index_of_select + 1
         else:
             index_of_select = 0
 
     def frames(self):
-        #for i in range(0, 5, 1):
-            self.frame = cv2.VideoCapture(index_of_select)
+        i=0
+        captures = []
+        for video in videos:
+            ret, frame = video.read()
+            if ret == False:
+                break
+            captures.append(cv.2.imwrite('frame' + str(i) + '.jpg', frame))
+            i+=1
+        videos.release()
+        return captures
