@@ -4,7 +4,7 @@ import os
 
 
 def draw_lines(frame, mask):
-    lines = cv2.HoughLinesP(mask, 1, np.pi / 180, 100, minLineLength=40, maxLineGap=50)
+    lines = cv2.HoughLinesP(mask, 1, np.pi/ 180, 100, minLineLength=40, maxLineGap=50)
 
     if lines is not None:
         for line in lines:
@@ -21,8 +21,29 @@ def extract_frames(frame, count):
     cv2.imwrite("../vision/grid_map/frames/frame%d.jpg" % count, frame)
 
 
+def image_stitching():
+    frames = []
+    folder = os.listdir("../vision/grid_map/frames")
+
+    for i in range(len(folder)):
+        img = cv2.imread("../vision/grid_map/frames/frame" + str(i) + ".jpg")
+        img = cv2.resize(img, (0, 0), None, .6, 1)
+        frames.append(img)
+
+    stitcher = cv2.Stitcher.create()
+    ret, final_image = stitcher.stitch(frames)
+
+    if ret == cv2.STITCHER_OK:
+        cv2.imshow("Final Image", final_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+    else:
+        print("Error during stitching")
+
+
 def play_video(video):
-    count = 0  # For image stitching
+    loop = 0  # For image stitching
+    count = 0
 
     # Clear frames folder
     clear_frames()
@@ -50,15 +71,19 @@ def play_video(video):
         draw_lines(frame, b_mask)
 
         # Get frames for image stitching
-        extract_frames(frame, count)
-        count += 1
+        if loop % 50 == 0:
+            extract_frames(frame, count)
+            count += 1
+        loop += 1
 
         # Displaying the videos
         cv2.imshow("frame", frame)
-        # cv2.imshow("blue", b_mask)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
     video.release()
     cv2.destroyAllWindows()
+
+    # Stitch images in frames folder
+    # image_stitching()
