@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import os
 
 
 def draw_lines(frame, mask):
@@ -11,12 +12,20 @@ def draw_lines(frame, mask):
             cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
 
+def clear_frames():
+    for f in os.listdir("../vision/grid_map/frames"):
+        os.remove(os.path.join("../vision/grid_map/frames", f))
+
+
 def extract_frames(frame, count):
     cv2.imwrite("../vision/grid_map/frames/frame%d.jpg" % count, frame)
 
 
 def play_video(video):
     count = 0  # For image stitching
+
+    # Clear frames folder
+    clear_frames()
 
     while video.isOpened():
         ret, frame = video.read()
@@ -48,7 +57,7 @@ def play_video(video):
         cv2.imshow("frame", frame)
         # cv2.imshow("blue", b_mask)
 
-        if cv2.waitKey(25) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
     video.release()
