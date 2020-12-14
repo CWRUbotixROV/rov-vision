@@ -1,7 +1,7 @@
 import cv2
 from vision.grid_map import grid_map
 
-cap = cv2.VideoCapture("../vision/grid_map/transect.MOV")
+video = cv2.VideoCapture("../vision/grid_map/transect.MOV")
 
-grid_map.test(cap)
+grid_map.play_video(video)
 

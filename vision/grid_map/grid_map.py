@@ -2,9 +2,24 @@ import cv2
 import numpy as np
 
 
-def test(cap):
-    while cap.isOpened():
-        ret, frame = cap.read()
+def draw_lines(frame, mask):
+    lines = cv2.HoughLinesP(mask, 1, np.pi / 180, 100, minLineLength=40, maxLineGap=50)
+
+    if lines is not None:
+        for line in lines:
+            x1, y1, x2, y2 = line.reshape(4)
+            cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+
+def extract_frames(frame, count):
+    cv2.imwrite("../vision/grid_map/frames/frame%d.jpg" % count, frame)
+
+
+def play_video(video):
+    count = 0  # For image stitching
+
+    while video.isOpened():
+        ret, frame = video.read()
 
         if not ret:
             break
@@ -22,23 +37,19 @@ def test(cap):
         r_mask = cv2.inRange(hsv, lower_red, upper_red)  # Red
         b_mask = cv2.inRange(hsv, lower_blue, upper_blue)  # Blue
 
-        # Using blue mask to find the two blue poles
-        edges = cv2.Canny(b_mask, 75, 150)
-        lines = cv2.HoughLinesP(b_mask, 1, np.pi / 180, 100, minLineLength=40, maxLineGap=50)
+        # Draw lines onto the original video
+        draw_lines(frame, b_mask)
 
-        # Drawing the lines
-        if lines is not None:
-            for line in lines:
-                x1, y1, x2, y2 = line[0]
-                cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        # Get frames for image stitching
+        extract_frames(frame, count)
+        count += 1
 
         # Displaying the videos
         cv2.imshow("frame", frame)
         # cv2.imshow("blue", b_mask)
-        # cv2.imshow("Edges", edges)
 
         if cv2.waitKey(25) & 0xFF == ord('q'):
             break
 
-    cap.release()
+    video.release()
     cv2.destroyAllWindows()
