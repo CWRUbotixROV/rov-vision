@@ -8,11 +8,10 @@ class Video_Stream_Capture:
     frame = None
     file_paths = []
 
-    def __init__(self, file_paths, select):
+    def __init__(self, file_paths):
         self.file_paths = file_paths
         for path in file_paths:
             videos.append(cv2.VideoCapture(file_paths))
-        self.select = select
 
     def next(self):
         if ((len(videos) - 1) > index_of_select):
@@ -27,7 +26,6 @@ class Video_Stream_Capture:
             ret, frame = video.read()
             if ret == False:
                 break
-            captures.append(cv.2.imwrite('frame' + str(i) + '.jpg', frame))
+            captures.append(frame)
             i+=1
-        videos.release()
-        return captures
+        return captures[index_of_select]
