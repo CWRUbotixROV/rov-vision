@@ -53,7 +53,8 @@ class CoralPOI:
             d[shape] = 1
     def Location():
         #determine location of each shape and return coordinates for GridMap
-        img = cv2.imread('real_shapes.png', cv2.IMREAD_COLOR)
+        path = 'C:/Users/Afaz/Documents/Robotics/rov-vision/real_shapes.png'
+        image = cv2.imread(path, cv2.IMREAD_COLOR)
         M = im.shape[0]//2
         N = im.shape[1]//2
         x, y = img.shape[:2]
@@ -61,8 +62,8 @@ class CoralPOI:
             for y in range(0,im.shape[1],N):
                 tiles = [im[x:x+M,y:y+N] 
     
-    gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
 
     # Use an adaptive threshold on the image, since lighting is expected to be non-uniform.
     ret, otsu = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU) #ret is the optimal threshold value for a bimodal image. otsu is the name of the thresholded image
