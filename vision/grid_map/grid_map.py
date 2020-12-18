@@ -18,15 +18,21 @@ def clear_frames():
 
 
 def extract_frames(frame, count):
-    cv2.imwrite("../vision/grid_map/frames/frame%d.jpg" % count, frame)
+    cv2.imwrite("../vision/grid_map/frames/%d.jpg" % count, frame)
 
 
 def image_stitching():
+    file_names = []
     frames = []
     folder = os.listdir("../vision/grid_map/frames")
 
-    for i in range(len(folder)):
-        img = cv2.imread("../vision/grid_map/frames/frame" + str(i) + ".jpg")
+    for file in folder:
+        file_names.append(file)
+
+    file_names = sorted(file_names)
+
+    for file in file_names:
+        img = cv2.imread("../vision/grid_map/frames/" + file)
         img = cv2.resize(img, (0, 0), None, .6, 1)
         frames.append(img)
 
