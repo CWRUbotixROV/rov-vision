@@ -31,4 +31,3 @@ def get_all_images(*paths):
 def get_video(*paths):
     """Returns a VideoCapture object from a video file at the specified path with each folder as a separate argument."""
     return cv2.VideoCapture(path.join(images_path, *paths))
-
