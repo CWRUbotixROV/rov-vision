@@ -1,3 +1,4 @@
+from vision.images import *
 import cv2
 import numpy as np
 import os
@@ -13,28 +14,19 @@ def draw_lines(frame, mask):
 
 
 def clear_frames():
-    for f in os.listdir("../vision/grid_map/frames"):
-        os.remove(os.path.join("../vision/grid_map/frames", f))
+    # for f in os.listdir("../vision/grid_map/frames"):
+    #     os.remove(os.path.join("../vision/grid_map/frames", f))
+    clear_folder("transect", "frames")
 
 
 def extract_frames(frame, count):
-    cv2.imwrite("../vision/grid_map/frames/%d.jpg" % count, frame)
+    img = cv2.imwrite(get_folder("transect", "frames") + "/%d.jpg" % count, frame)
 
 
 def image_stitching():
-    file_names = []
     frames = []
-    folder = os.listdir("../vision/grid_map/frames")
 
-    for file in folder:
-        file_names.append(file)
-
-    file_names = sorted(file_names)
-
-    for file in file_names:
-        img = cv2.imread("../vision/grid_map/frames/" + file)
-        img = cv2.resize(img, (0, 0), None, .6, 1)
-        frames.append(img)
+    frames = get_all_images("transect", "frames")
 
     stitcher = cv2.Stitcher.create()
     ret, final_image = stitcher.stitch(frames)
