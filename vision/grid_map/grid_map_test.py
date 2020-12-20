@@ -4,6 +4,12 @@ from vision.images import *
 
 video = get_video("transect", "transect.MOV")
 
+# Tests image stitching
 # grid_map.image_stitching()
-grid_map.play_video(video)
+
+# Tests color and line detection
+# grid_map.play_video(video)
+
+# Redoing color detection with k means clustering
+grid_map.test(video, 1)
 

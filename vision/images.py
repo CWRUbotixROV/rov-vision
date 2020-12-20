@@ -33,15 +33,16 @@ def get_all_images(*paths):
     return images
 
 
-def get_folder(*paths):
-    """Returns the path of the specified folder
-    For example: 'get_folder("transect", "frames")'"""
-    return path.join(images_path, *paths)
-
 def get_video(*paths):
     """Returns a VideoCapture object from a video file at the specified path with each folder as a separate argument.
     For example: 'get_video("transect", "transect.MOV")'"""
     return cv2.VideoCapture(path.join(images_path, *paths))
+
+
+def get_folder(*paths):
+    """Returns the path of the specified folder
+    For example: 'get_folder("transect", "frames")'"""
+    return path.join(images_path, *paths)
 
 
 def clear_folder(*paths):
