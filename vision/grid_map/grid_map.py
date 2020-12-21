@@ -1,6 +1,7 @@
 from vision.images import *
 import cv2
 import numpy as np
+import time
 
 
 def draw_lines(frame, mask):
@@ -16,12 +17,12 @@ def clear_frames():
     clear_folder("transect", "frames")
 
 
-def get_frames(frame, count):
+def get_frame(frame, count):
     cv2.imwrite(get_folder("transect", "frames") + "/%d.jpg" % count, frame)
 
 
 def image_stitching():
-    frames = []
+    print("Starting image stitching")
 
     frames = get_all_images("transect", "frames")
 
@@ -38,8 +39,8 @@ def image_stitching():
 
 
 def start_mapping(video):
-    loop = 0  # For image stitching
     count = 0
+    current_time = time.time()
 
     # Clear frames folder
     clear_frames()
@@ -66,16 +67,16 @@ def start_mapping(video):
         # Draw lines onto the original video
         draw_lines(frame, b_mask)
 
-        # Get frames for image stitching
-        if loop % 50 == 0:
-            get_frames(frame, count)
+        # Get frame every 1 second for image stitching
+        if time.time() - current_time >= 1:
+            get_frame(frame, count)
+            current_time = time.time()
             count += 1
-        loop += 1
 
         # Displaying the videos
         cv2.imshow("frame", frame)
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv2.waitKey(25) & 0xFF == ord('q'):
             break
 
     video.release()
