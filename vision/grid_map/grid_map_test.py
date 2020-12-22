@@ -1,12 +1,20 @@
-import cv2
-from vision.grid_map import grid_map
+from vision.grid_map.grid_map import *
+from vision.grid_map.colors import *
 from vision.images import *
 
 video = get_video("transect", "transect.MOV")
 
 # Tests color and line detection
-grid_map.start_mapping(video)
+start_mapping(video)
 
 # Tests image stitching
-# grid_map.image_stitching()
+image_stitching()
 
+# Check if stitched_img exists
+stitched_img = get_image("transect", "stitched_img.jpg")
+
+if stitched_img is not None:
+    # Use k means color clustering on stitched_img
+    get_colors(get_image("transect", "stitched_img.jpg"), 20)
+else:
+    print("Could not find stitched image")

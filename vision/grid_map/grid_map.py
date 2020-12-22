@@ -27,19 +27,23 @@ def image_stitching():
     frames = get_all_images("transect", "frames")
 
     stitcher = cv2.Stitcher.create(mode=cv2.STITCHER_SCANS)
-    ret, final_image = stitcher.stitch(frames)
+    ret, stitched_img = stitcher.stitch(frames)
 
     if ret == cv2.STITCHER_OK:
-        final_image = cv2.resize(final_image, (0, 0), None, .5, .5)
-        cv2.imshow("Final Image", final_image)
+        stitched_img = cv2.resize(stitched_img, (0, 0), None, .5, .5)
+        cv2.imshow("Final Image", stitched_img)
+
+        cv2.imwrite(get_folder("transect") + "/stitched_img.jpg", stitched_img)
+
         cv2.waitKey(0)
         cv2.destroyAllWindows()
+
     else:
         print("Error during stitching")
 
 
 def start_mapping(video):
-    count = 0
+    frame_num = 0  # For naming frames
     current_time = time.time()
 
     # Clear frames folder
@@ -69,18 +73,15 @@ def start_mapping(video):
 
         # Get frame every 1 second for image stitching
         if time.time() - current_time >= 1:
-            get_frame(frame, count)
+            get_frame(frame, frame_num)
             current_time = time.time()
-            count += 1
+            frame_num += 1
 
         # Displaying the videos
         cv2.imshow("frame", frame)
 
-        if cv2.waitKey(25) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
     video.release()
     cv2.destroyAllWindows()
-
-    # Stitch images in frames folder
-    image_stitching()
