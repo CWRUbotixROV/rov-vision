@@ -1,5 +1,5 @@
 from vision.grid_map.grid_map import *
-from vision.grid_map.colors import *
+from vision.colors import *
 from vision.images import *
 
 video = get_video("transect", "transect.MOV")
@@ -15,6 +15,6 @@ stitched_img = get_image("transect", "stitched_img.jpg")
 
 if stitched_img is not None:
     # Use k means color clustering on stitched_img
-    get_colors(get_image("transect", "stitched_img.jpg"), 20)
+    get_colors(stitched_img, 20)
 else:
     print("Could not find stitched image")

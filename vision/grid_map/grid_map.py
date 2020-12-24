@@ -1,3 +1,5 @@
+"""Contains methods to map video with lines from a mask"""
+
 from vision.images import *
 import cv2
 import numpy as np
@@ -5,6 +7,8 @@ import time
 
 
 def draw_lines(frame, mask):
+    """Draws HoughLines on image
+    For example: 'draw_lines(frame, edges)'"""
     lines = cv2.HoughLinesP(mask, 1, np.pi/180, 100, minLineLength=40, maxLineGap=50)
 
     if lines is not None:
@@ -14,6 +18,8 @@ def draw_lines(frame, mask):
 
 
 def clear_frames():
+    """Clears the folder
+    No arguments"""
     clear_folder("transect", "frames")
 
 
@@ -22,6 +28,8 @@ def get_frame(frame, count):
 
 
 def image_stitching():
+    """Stitches images together
+    No arguments"""
     print("Starting image stitching")
 
     frames = get_all_images("transect", "frames")
@@ -43,6 +51,8 @@ def image_stitching():
 
 
 def start_mapping(video):
+    """Maps video and displays video with lines drawn on
+    For example: 'start_mapping("get_video("transect", "transect.MOV")")'"""
     frame_num = 0  # For naming frames
     current_time = time.time()
 
@@ -71,8 +81,8 @@ def start_mapping(video):
         # Draw lines onto the original video
         draw_lines(frame, b_mask)
 
-        # Get frame every 1 second for image stitching
-        if time.time() - current_time >= 1:
+        # Get frame every .5 seconds for image stitching
+        if time.time() - current_time >= .5:
             get_frame(frame, frame_num)
             current_time = time.time()
             frame_num += 1
@@ -80,7 +90,7 @@ def start_mapping(video):
         # Displaying the videos
         cv2.imshow("frame", frame)
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv2.waitKey(25) & 0xFF == ord('q'):
             break
 
     video.release()
