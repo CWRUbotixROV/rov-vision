@@ -58,11 +58,14 @@ def get_contours(img, img_contour):
     contours, hierarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
     for cnt in contours:
-        area = cv2.contourArea(cnt)
-        if area > 1000:
-            cv2.drawContours(img_contour, cnt, -1, (255, 0, 255), 7)
-            peri = cv2.arcLength(cnt, True)
-            approx = cv2.approxPolyDP(cnt, .02 * peri, True)
+        # area = cv2.contourArea(cnt)
+        # if area > 1000:
+        #     cv2.drawContours(img_contour, cnt, -1, (255, 0, 255), 7)
+        #     peri = cv2.arcLength(cnt, True)
+        #     approx = cv2.approxPolyDP(cnt, .02 * peri, True)
+
+        x, y, w, h = cv2.boundingRect(cnt)
+        cv2.rectangle(img_contour, (x, y), (x + w, y + h), (0, 255, 0), 5)
 
 
 def find_squares(video):
@@ -136,18 +139,22 @@ def start_mapping(video):
         r_mask = cv2.inRange(hsv, lower_red, upper_red)  # Red
         b_mask = cv2.inRange(hsv, lower_blue, upper_blue)  # Blue
 
-        # Draw lines onto the original video
-        draw_lines(frame, b_mask)
+        # Draw lines where blue poles are
+        lines = np.zeros_like(frame)
+        draw_lines(lines, b_mask)
+        lines = cv2.cvtColor(lines, cv2.COLOR_BGR2GRAY)
+
+        contours = np.zeros_like(frame)
+        get_contours(lines, contours)
 
         # Get frame every .5 seconds for image stitching
-        if time.time() - current_time >= .5:
-            get_frame(frame, frame_num)
-            current_time = time.time()
-            frame_num += 1
+        # if time.time() - current_time >= .5:
+        #     get_frame(frame, frame_num)
+        #     current_time = time.time()
+        #     frame_num += 1
 
         # Displaying the videos
-        # cv2.imshow("frame", frame)
-        cv2.imshow("red", r_mask)
+        cv2.imshow("contours", contours)
 
         if cv2.waitKey(25) & 0xFF == ord('q'):
             break

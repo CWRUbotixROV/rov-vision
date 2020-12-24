@@ -5,10 +5,10 @@ from vision.images import *
 video = get_video("transect", "transect.MOV")
 
 # Tests square detection
-find_squares(video)
+# find_squares(video)
 
 # Tests color and line detection
-# start_mapping(video)
+start_mapping(video)
 
 # Tests image stitching
 # image_stitching()
