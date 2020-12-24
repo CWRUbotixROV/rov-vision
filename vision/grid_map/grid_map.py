@@ -1,11 +1,11 @@
 from vision.images import *
 import cv2
 import numpy as np
-import os
+import time
 
 
 def draw_lines(frame, mask):
-    lines = cv2.HoughLinesP(mask, 1, np.pi/ 180, 100, minLineLength=40, maxLineGap=50)
+    lines = cv2.HoughLinesP(mask, 1, np.pi/180, 100, minLineLength=40, maxLineGap=50)
 
     if lines is not None:
         for line in lines:
@@ -14,34 +14,37 @@ def draw_lines(frame, mask):
 
 
 def clear_frames():
-    # for f in os.listdir("../vision/grid_map/frames"):
-    #     os.remove(os.path.join("../vision/grid_map/frames", f))
     clear_folder("transect", "frames")
 
 
-def extract_frames(frame, count):
-    img = cv2.imwrite(get_folder("transect", "frames") + "/%d.jpg" % count, frame)
+def get_frame(frame, count):
+    cv2.imwrite(get_folder("transect", "frames") + "/%d.jpg" % count, frame)
 
 
 def image_stitching():
-    frames = []
+    print("Starting image stitching")
 
     frames = get_all_images("transect", "frames")
 
-    stitcher = cv2.Stitcher.create()
-    ret, final_image = stitcher.stitch(frames)
+    stitcher = cv2.Stitcher.create(mode=cv2.STITCHER_SCANS)
+    ret, stitched_img = stitcher.stitch(frames)
 
     if ret == cv2.STITCHER_OK:
-        cv2.imshow("Final Image", final_image)
+        stitched_img = cv2.resize(stitched_img, (0, 0), None, .5, .5)
+        cv2.imshow("Final Image", stitched_img)
+
+        cv2.imwrite(get_folder("transect") + "/stitched_img.jpg", stitched_img)
+
         cv2.waitKey(0)
         cv2.destroyAllWindows()
+
     else:
         print("Error during stitching")
 
 
-def play_video(video):
-    loop = 0  # For image stitching
-    count = 0
+def start_mapping(video):
+    frame_num = 0  # For naming frames
+    current_time = time.time()
 
     # Clear frames folder
     clear_frames()
@@ -68,11 +71,11 @@ def play_video(video):
         # Draw lines onto the original video
         draw_lines(frame, b_mask)
 
-        # Get frames for image stitching
-        if loop % 50 == 0:
-            extract_frames(frame, count)
-            count += 1
-        loop += 1
+        # Get frame every 1 second for image stitching
+        if time.time() - current_time >= 1:
+            get_frame(frame, frame_num)
+            current_time = time.time()
+            frame_num += 1
 
         # Displaying the videos
         cv2.imshow("frame", frame)
@@ -82,6 +85,3 @@ def play_video(video):
 
     video.release()
     cv2.destroyAllWindows()
-
-    # Stitch images in frames folder
-    # image_stitching()
