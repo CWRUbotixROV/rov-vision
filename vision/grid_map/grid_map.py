@@ -54,26 +54,29 @@ def empty(a):
     pass
 
 
-def get_contours(img, img_contour):
-    contours, hierarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+def get_contours(mask, frame):
+    contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
     for cnt in contours:
-        # area = cv2.contourArea(cnt)
-        # if area > 1000:
-        #     cv2.drawContours(img_contour, cnt, -1, (255, 0, 255), 7)
-        #     peri = cv2.arcLength(cnt, True)
-        #     approx = cv2.approxPolyDP(cnt, .02 * peri, True)
+        area = cv2.contourArea(cnt)
+        approx = cv2.approxPolyDP(cnt, .01 * cv2.arcLength(cnt, True), True)
 
-        x, y, w, h = cv2.boundingRect(cnt)
-        cv2.rectangle(img_contour, (x, y), (x + w, y + h), (0, 255, 0), 5)
+        if area > 400:
+            cv2.drawContours(frame, [approx], 0, (255, 0, 0), 5)
+
+            if len(approx) == 4:
+                x, y, w, h = cv2.boundingRect(approx)
+                aspect_ratio = float(w)/h
+
+                if .5 <= aspect_ratio <= 1.5:
+                    cv2.putText(frame, "Square", (x, y + int(w/2)), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0))
 
 
 def find_squares(video):
 
     cv2.namedWindow("Trackbar")
-    cv2.resizeWindow("Trackbar", 640, 240)
     cv2.createTrackbar("Thresh1", "Trackbar", 87, 255, empty)
-    cv2.createTrackbar("Thresh2", "Trackbar", 255, 255, empty)
+    cv2.createTrackbar("Thresh2", "Trackbar", 230, 255, empty)
 
     while video.isOpened():
         ret, frame = video.read()
@@ -82,7 +85,6 @@ def find_squares(video):
             break
 
         blur = cv2.GaussianBlur(frame, (7, 7), 1)
-        gray = cv2.cvtColor(blur, cv2.COLOR_BGR2GRAY)
 
         thresh1 = cv2.getTrackbarPos("Thresh1", "Trackbar")
         thresh2 = cv2.getTrackbarPos("Thresh2", "Trackbar")
@@ -144,17 +146,18 @@ def start_mapping(video):
         draw_lines(lines, b_mask)
         lines = cv2.cvtColor(lines, cv2.COLOR_BGR2GRAY)
 
-        contours = np.zeros_like(frame)
-        get_contours(lines, contours)
+        # contours = np.zeros_like(frame)
+        # get_contours(lines, contours)
 
         # Get frame every .5 seconds for image stitching
-        # if time.time() - current_time >= .5:
-        #     get_frame(frame, frame_num)
-        #     current_time = time.time()
-        #     frame_num += 1
+        if time.time() - current_time >= .5:
+            get_frame(frame, frame_num)
+            current_time = time.time()
+            frame_num += 1
 
         # Displaying the videos
-        cv2.imshow("contours", contours)
+        cv2.imshow("lines", lines)
+        # cv2.imshow("contours", contours)
 
         if cv2.waitKey(25) & 0xFF == ord('q'):
             break
