@@ -3,14 +3,15 @@ from vision.colors import *
 from vision.images import *
 
 video = get_video("transect", "transect.MOV")
+video2 = get_video("transect", "transect2.mp4")
 
 # Tests square detection
 start_mapping(video)
 
-# # Tests color and line detection
+# Tests color and line detection
 # find_blue_poles(video)
 
-#
+
 # # Tests image stitching
 # image_stitching()
 #

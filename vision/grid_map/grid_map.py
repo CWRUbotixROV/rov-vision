@@ -3,7 +3,6 @@
 from vision.images import *
 import cv2
 import numpy as np
-import time
 
 
 def clear_frames():
@@ -42,7 +41,7 @@ def image_stitching():
 def draw_lines(frame, mask):
     """Draws HoughLines on image
     For example: 'draw_lines(frame, edges)'"""
-    lines = cv2.HoughLinesP(mask, 1, np.pi/180, 100, minLineLength=100, maxLineGap=100)
+    lines = cv2.HoughLinesP(mask, 1, np.pi/180, 100, minLineLength=150, maxLineGap=100)
 
     if lines is not None:
         for i in range(len(lines)):
@@ -192,15 +191,13 @@ def start_mapping(video):
         lines = np.zeros_like(frame)
         draw_lines(lines, canny)
 
-        kernel = np.ones((5, 5))
+        kernel = np.ones((10, 10))
         lines = cv2.dilate(lines, kernel, iterations=1)
         lines = cv2.cvtColor(lines, cv2.COLOR_BGR2GRAY)
 
         find_squares(lines, frame)
 
         cv2.imshow("frame", frame)
-        # cv2.imshow("canny", canny)
-        # cv2.imshow("lines", lines)
 
         if cv2.waitKey(25) & 0xFF == ord('q'):
             break
@@ -210,10 +207,10 @@ def start_mapping(video):
 
 
 def find_blue_poles(video):
-    """Maps video and displays video with lines drawn on
+    """Detects where the two blue poles are
     For example: 'start_mapping("get_video("transect", "transect.MOV")")'"""
     frame_num = 0  # For naming frames
-    current_time = time.time()
+    count = 0 #  Tracks frame count
 
     # Clear frames folder
     clear_frames()
@@ -239,17 +236,17 @@ def find_blue_poles(video):
 
         # Draw lines where blue poles are
         lines = np.zeros_like(frame)
-        draw_lines(lines, b_mask)
-        lines = cv2.cvtColor(lines, cv2.COLOR_BGR2GRAY)
+        draw_lines(frame, b_mask)
 
-        # Get frame every .5 seconds for image stitching
-        # if time.time() - current_time >= .5:
-        #     get_frame(frame, frame_num)
-        #     current_time = time.time()
-        #     frame_num += 1
+        # Get frame every few frames for image stitching
+        if count % 20 == 0:
+            get_frame(frame, frame_num)
+            frame_num += 1
+        count += 1
 
         # Displaying the videos
-        cv2.imshow("lines", lines)
+        # cv2.imshow("lines", lines)
+        cv2.imshow("frame", frame)
 
         if cv2.waitKey(25) & 0xFF == ord('q'):
             break
