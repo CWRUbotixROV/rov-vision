@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 import time
 
+
 def clear_frames():
     """Clears the folder
     No arguments"""
@@ -51,13 +52,23 @@ def draw_lines(frame, mask):
             cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
 
-def empty(a):
-    pass
+class Square:
+    def __init__(self, num, x, y, w, h, visible):
+        self.num = num
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+        self.visible = visible
+        self.delete = 20
 
 
-def find_squares(mask, frame, squares, num):
+def find_squares(mask, frame):
+    global num
+    global squares
+    curr_squares = []  # Squares in the current frame
+
     contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    found = False  # If square was found
 
     for cnt in contours:
         area = cv2.contourArea(cnt)
@@ -72,15 +83,91 @@ def find_squares(mask, frame, squares, num):
 
                 # Check if sides are equal-ish lengths
                 if .5 <= aspect_ratio <= 1.5:
-                    cv2.putText(frame, str(num), (x + int(w / 2), y + int(w / 2)), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0))
-                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 5)
-                    found = True
+                    curr_squares.append(Square(-1, x, y, w, h, True))
 
-        if found:
+    if len(squares) == 0:
+        for s in curr_squares:
             num += 1
-            found = False
+            s.num = num
+            squares.append(s)
 
-    return num
+    elif len(curr_squares) >= len(squares):
+        matched = []
+
+        for s1 in curr_squares:
+            for s2 in squares:
+                if np.allclose([s1.x, s1.y, s1.w, s1.h], [s2.x, s2.y, s2.w, s2.h], atol=50):
+                    s2.x = s1.x
+                    s2.y = s1.y
+                    s2.w = s1.w
+                    s2.h = s1.h
+
+                    s1.num = s2.num
+                    matched.append(s1.num)
+
+                    s2.delete = 20
+
+        if len(curr_squares) != len(matched):
+            for s in curr_squares:
+                if s.num not in matched:
+                    num += 1
+                    s.num = num
+                    matched.append(s.num)
+                    squares.append(s)
+
+    else:
+        matched = []
+
+        for s in curr_squares:
+            s.visible = False
+
+        for s in squares:
+            s.visible = False
+
+        for s1 in curr_squares:
+            for s2 in squares:
+                if np.allclose([s1.x, s1.y, s1.w, s1.h], [s2.x, s2.y, s2.w, s2.h], atol=50):
+                    s2.x = s1.x
+                    s2.y = s1.y
+                    s2.w = s1.w
+                    s2.h = s1.h
+
+                    s1.num = s2.num
+                    matched.append(s1.num)
+
+                    s2.visible = True
+                    s2.delete = 20
+                    break
+
+        if len(curr_squares) != len(matched):
+            for s in curr_squares:
+                if s.num not in matched:
+                    num += 1
+                    s.num = num
+                    matched.append(s.num)
+                    squares.append(s)
+
+        for s in squares:
+            if not s.visible:
+                if s.delete == 0:
+                    squares.remove(s)
+                else:
+                    s.delete -= 1
+
+    for s in squares:
+        if s.visible:
+            cv2.putText(frame, str(s.num), (s.x + int(s.w / 2), s.y + int(s.w / 2)),
+                        cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0))
+            cv2.rectangle(frame, (s.x, s.y), (s.x + s.w, s.y + s.h), (0, 255, 0), 5)
+
+
+# Used for trackbar
+def empty(a):
+    pass
+
+
+squares = []  # Tracks square objects
+num = 0  # Unique ID for each square
 
 
 def start_mapping(video):
@@ -88,9 +175,6 @@ def start_mapping(video):
     cv2.namedWindow("Trackbar")
     cv2.createTrackbar("Thresh1", "Trackbar", 87, 255, empty)
     cv2.createTrackbar("Thresh2", "Trackbar", 230, 255, empty)
-
-    squares = []  # Tracks square objects
-    num = 0  # Unique ID for each square
 
     while video.isOpened():
         ret, frame = video.read()
@@ -112,7 +196,7 @@ def start_mapping(video):
         lines = cv2.dilate(lines, kernel, iterations=1)
         lines = cv2.cvtColor(lines, cv2.COLOR_BGR2GRAY)
 
-        num = find_squares(lines, frame, squares, num)
+        find_squares(lines, frame)
 
         cv2.imshow("frame", frame)
         # cv2.imshow("canny", canny)
@@ -158,9 +242,6 @@ def find_blue_poles(video):
         draw_lines(lines, b_mask)
         lines = cv2.cvtColor(lines, cv2.COLOR_BGR2GRAY)
 
-        contours = np.zeros_like(frame)
-        get_contours(lines, contours)
-
         # Get frame every .5 seconds for image stitching
         # if time.time() - current_time >= .5:
         #     get_frame(frame, frame_num)
@@ -169,7 +250,6 @@ def find_blue_poles(video):
 
         # Displaying the videos
         cv2.imshow("lines", lines)
-        cv2.imshow("contours", contours)
 
         if cv2.waitKey(25) & 0xFF == ord('q'):
             break
