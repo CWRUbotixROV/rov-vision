@@ -52,21 +52,22 @@ def draw_lines(frame, mask):
 
 
 class Square:
-    def __init__(self, num, x, y, w, h, visible):
-        self.num = num
-        self.x = x
-        self.y = y
-        self.w = w
-        self.h = h
-        self.visible = visible
-        self.delete = 20
+    def __init__(self, id, x, y, w, h, visible):
+        self.id = id  # Unique ID for each square
+        self.x = x  # x value
+        self.y = y  # y value
+        self.w = w  # width
+        self.h = h  # height
+        self.visible = visible  # True if square is visible in video
+        self.delete = 20  # Num of frames square can not be visible before being deleted
 
 
-def find_squares(mask, frame):
-    global num
-    global squares
+squares = []  # Tracks square objects
+id = 0  # Unique ID for each square
+
+
+def get_contours(mask, frame):
     curr_squares = []  # Squares in the current frame
-
     contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
     for cnt in contours:
@@ -76,6 +77,7 @@ def find_squares(mask, frame):
         if area > 10000:
             # cv2.drawContours(frame, [approx], 0, (255, 0, 0), 5)
 
+            # Check if the contour has 4 sides
             if len(approx) == 4:
                 x, y, w, h = cv2.boundingRect(approx)
                 aspect_ratio = float(w)/h
@@ -84,42 +86,24 @@ def find_squares(mask, frame):
                 if .5 <= aspect_ratio <= 1.5:
                     curr_squares.append(Square(-1, x, y, w, h, True))
 
+    find_squares(curr_squares, frame)
+
+
+def find_squares(curr_squares, frame):
+    global id
+    global squares  # Square objects already being tracked
+    matched = []  # Squares in curr_squares matched to a square in squares
+
+    # Check if a square should be tracked or deleted
     if len(squares) == 0:
         for s in curr_squares:
-            num += 1
-            s.num = num
+            id += 1
+            s.id = id
             squares.append(s)
+            matched.append(s)
 
-    elif len(curr_squares) >= len(squares):
-        matched = []
-
-        for s1 in curr_squares:
-            for s2 in squares:
-                if np.allclose([s1.x, s1.y, s1.w, s1.h], [s2.x, s2.y, s2.w, s2.h], atol=50):
-                    s2.x = s1.x
-                    s2.y = s1.y
-                    s2.w = s1.w
-                    s2.h = s1.h
-
-                    s1.num = s2.num
-                    matched.append(s1.num)
-
-                    s2.delete = 20
-
-        if len(curr_squares) != len(matched):
-            for s in curr_squares:
-                if s.num not in matched:
-                    num += 1
-                    s.num = num
-                    matched.append(s.num)
-                    squares.append(s)
-
+    # If curr_squares < squares
     else:
-        matched = []
-
-        for s in curr_squares:
-            s.visible = False
-
         for s in squares:
             s.visible = False
 
@@ -131,20 +115,12 @@ def find_squares(mask, frame):
                     s2.w = s1.w
                     s2.h = s1.h
 
-                    s1.num = s2.num
-                    matched.append(s1.num)
+                    s1.id = s2.id
+                    matched.append(s1.id)
 
                     s2.visible = True
                     s2.delete = 20
                     break
-
-        if len(curr_squares) != len(matched):
-            for s in curr_squares:
-                if s.num not in matched:
-                    num += 1
-                    s.num = num
-                    matched.append(s.num)
-                    squares.append(s)
 
         for s in squares:
             if not s.visible:
@@ -153,20 +129,25 @@ def find_squares(mask, frame):
                 else:
                     s.delete -= 1
 
+    if len(curr_squares) != len(matched):
+        for s in curr_squares:
+            if s.id not in matched:
+                id += 1
+                s.id = id
+                matched.append(s.id)
+                squares.append(s)
+
+    # Drawing squares on the frame
     for s in squares:
         if s.visible:
-            cv2.putText(frame, str(s.num), (s.x + int(s.w / 2), s.y + int(s.w / 2)),
-                        cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0))
+            cv2.putText(frame, str(s.id), (s.x + int(s.w / 2), s.y + int(s.w / 2)),
+                        cv2.FONT_HERSHEY_DUPLEX, 1, (0, 255, 0))
             cv2.rectangle(frame, (s.x, s.y), (s.x + s.w, s.y + s.h), (0, 255, 0), 5)
 
 
 # Used for trackbar
 def empty(a):
     pass
-
-
-squares = []  # Tracks square objects
-num = 0  # Unique ID for each square
 
 
 def start_mapping(video):
@@ -195,9 +176,10 @@ def start_mapping(video):
         lines = cv2.dilate(lines, kernel, iterations=1)
         lines = cv2.cvtColor(lines, cv2.COLOR_BGR2GRAY)
 
-        find_squares(lines, frame)
+        get_contours(lines, frame)
 
         cv2.imshow("frame", frame)
+        # cv2.imshow("lines", lines)
 
         if cv2.waitKey(25) & 0xFF == ord('q'):
             break
