@@ -4,17 +4,6 @@ from vision.images import *
 import cv2
 import numpy as np
 
-
-def clear_frames():
-    """Clears the folder
-    No arguments"""
-    clear_folder("transect", "frames")
-
-
-def get_frame(frame, count):
-    cv2.imwrite(get_folder("transect", "frames") + "/%d.jpg" % count, frame)
-
-
 def image_stitching():
     """Stitches images together
     No arguments"""
@@ -37,7 +26,6 @@ def image_stitching():
     else:
         print("Error during stitching")
 
-
 def draw_lines(frame, mask):
     """Draws HoughLines on image
     For example: 'draw_lines(frame, edges)'"""
@@ -50,21 +38,19 @@ def draw_lines(frame, mask):
             x1, y1, x2, y2 = line.reshape(4)
             cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
-
 class Square:
-    def __init__(self, id, x, y, w, h, visible):
+    def __init__(self, id, x, y, w, h):
         self.id = id  # Unique ID for each square
         self.x = x  # x value
         self.y = y  # y value
         self.w = w  # width
         self.h = h  # height
-        self.visible = visible  # True if square is visible in video
-        self.delete = 20  # Num of frames square can not be visible before being deleted
-
+        self.visible = True  # True if square is visible in video
+        self.delete = 0  # Tracks num of frames visible = False
+        self.screenshot_num = 0  # Tracks num of screenshots taken per square
 
 squares = []  # Tracks square objects
 id = 0  # Unique ID for each square
-
 
 def get_contours(mask, frame):
     curr_squares = []  # Squares in the current frame
@@ -84,15 +70,14 @@ def get_contours(mask, frame):
 
                 # Check if sides are equal-ish lengths
                 if .5 <= aspect_ratio <= 1.5:
-                    curr_squares.append(Square(-1, x, y, w, h, True))
+                    curr_squares.append(Square(-1, x, y, w, h))
 
     find_squares(curr_squares, frame)
-
 
 def find_squares(curr_squares, frame):
     global id
     global squares  # Square objects already being tracked
-    matched = []  # Squares in curr_squares matched to a square in squares
+    matched = []  # id of squares in curr_squares matched to a square in squares
 
     # Check if a square should be tracked or deleted
     if len(squares) == 0:
@@ -102,13 +87,13 @@ def find_squares(curr_squares, frame):
             squares.append(s)
             matched.append(s)
 
-    # If curr_squares < squares
     else:
         for s in squares:
             s.visible = False
 
         for s1 in curr_squares:
             for s2 in squares:
+                # If a detected square is similar to a square already being tracked, update the square's info
                 if np.allclose([s1.x, s1.y, s1.w, s1.h], [s2.x, s2.y, s2.w, s2.h], atol=50):
                     s2.x = s1.x
                     s2.y = s1.y
@@ -119,15 +104,16 @@ def find_squares(curr_squares, frame):
                     matched.append(s1.id)
 
                     s2.visible = True
-                    s2.delete = 20
+                    s2.delete = 0
                     break
 
-        for s in squares:
-            if not s.visible:
-                if s.delete == 0:
-                    squares.remove(s)
-                else:
-                    s.delete -= 1
+    # If a square is not visible for 20 consecutive frames, delete it
+    for s in squares:
+        if not s.visible:
+            if s.delete == 20:
+                squares.remove(s)
+            else:
+                s.delete += 1
 
     if len(curr_squares) != len(matched):
         for s in curr_squares:
@@ -137,6 +123,8 @@ def find_squares(curr_squares, frame):
                 matched.append(s.id)
                 squares.append(s)
 
+    screenshot_squares(squares, frame)
+
     # Drawing squares on the frame
     for s in squares:
         if s.visible:
@@ -144,17 +132,26 @@ def find_squares(curr_squares, frame):
                         cv2.FONT_HERSHEY_DUPLEX, 1, (0, 255, 0))
             cv2.rectangle(frame, (s.x, s.y), (s.x + s.w, s.y + s.h), (0, 255, 0), 5)
 
+def screenshot_squares(squares, frame):
+    for s in squares:
+        if s.screenshot_num != 5:
+            s.screenshot_num += 1
+
+            roi = frame[s.y:s.y + s.h, s.x:s.x + s.w]
+            file_name = str(s.id) + "(" + str(s.screenshot_num) + ").jpg"
+            cv2.imwrite(get_folder("transect", "squares") + "/" + file_name, roi)
 
 # Used for trackbar
 def empty(a):
     pass
-
 
 def start_mapping(video):
 
     cv2.namedWindow("Trackbar")
     cv2.createTrackbar("Thresh1", "Trackbar", 87, 255, empty)
     cv2.createTrackbar("Thresh2", "Trackbar", 230, 255, empty)
+
+    clear_folder("")
 
     while video.isOpened():
         ret, frame = video.read()
@@ -187,15 +184,14 @@ def start_mapping(video):
     video.release()
     cv2.destroyAllWindows()
 
-
 def find_blue_poles(video):
     """Detects where the two blue poles are
     For example: 'start_mapping("get_video("transect", "transect.MOV")")'"""
     frame_num = 0  # For naming frames
-    count = 0 #  Tracks frame count
+    count = 0  # Tracks frame count
 
     # Clear frames folder
-    clear_frames()
+    clear_folder("transect", "frames")
 
     while video.isOpened():
         ret, frame = video.read()
@@ -222,7 +218,7 @@ def find_blue_poles(video):
 
         # Get frame every few frames for image stitching
         if count % 20 == 0:
-            get_frame(frame, frame_num)
+            cv2.imwrite(get_folder("transect", "frames") + "/%d.jpg" % frame_num, frame)
             frame_num += 1
         count += 1
 

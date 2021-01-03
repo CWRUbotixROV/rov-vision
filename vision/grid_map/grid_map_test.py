@@ -20,6 +20,6 @@ start_mapping(video)
 #
 # if stitched_img is not None:
 #     # Use k means color clustering on stitched_img
-#     get_colors(stitched_img, 20)
+#     get_colors(stitched_img, 20, True)
 # else:
 #     print("Could not find stitched image")
