@@ -3,7 +3,7 @@
 from sklearn.cluster import KMeans
 import numpy as np
 import cv2
-
+from vision.images import show_debug
 
 def centroid_histogram(clt):
     """Gets number of different clusters and returns a normalized histogram from number of pixels assigned to each cluster.
@@ -41,20 +41,21 @@ def plot_colors(hist, centroids):
 def get_colors(image, clusters):
     """Gets the colors in an image and displays the histogram.
     For example: 'get_colors("coral", 8)'"""
-    cv2.imshow("Image", image)
+    show_debug(image, wait=False)
 
     image = image.reshape(image.shape[0] * image.shape[1], 3)
 
     clt = KMeans(n_clusters=clusters)
     clt.fit(image)
+    centroids = clt.cluster_centers_
 
     hist = centroid_histogram(clt)
     bar = plot_colors(hist, clt.cluster_centers_)
 
-    cv2.imshow("Colors", bar)
-
-    cv2.waitKey(0)
+    show_debug(bar, name="Colors")
     cv2.destroyAllWindows()
+
+    return centroids
 
 
 
