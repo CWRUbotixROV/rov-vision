@@ -2,6 +2,8 @@ import cv2
 import imutils
 from vision.coral.coral_ui import Coral
 from vision.images import get_image
+from vision.colors import *
+from vision.images import *
 import numpy as np
 
 class ShapeDetector:
@@ -13,11 +15,11 @@ class ShapeDetector:
         peri = cv2.arcLength(c, True)   # perimeter
         approx = cv2.approxPolyDP(c, 0.04*peri, True)   # use RDP algorithm to simplify shape
 
-        print(len(approx))
+        #print(len(approx))
         if len(approx)==2:
             shape = 'line'
-        elif len(approx)==3:
-            shape = 'triangle'
+        elif len(approx)== 8:
+            shape = 'star'
         elif len(approx)==4:    # could be square or line
             (x, y, w, h) = cv2.boundingRect(approx)
             ar = w/float(h)
@@ -28,20 +30,19 @@ class ShapeDetector:
             else:
                 shape = 'square'
         else:
-            shape = 'circle'    # shapes can only be square, triangle, line, or circle
+            shape = 'Sponge'    # shapes can only be square, triangle, line, or circle
 
         return shape
 
 
-def add_shape(shape, d):
+def add_shape(shape, d): 
     if shape in d:
         d[shape] = int(d[shape])+1
     else:
         d[shape] = 1
 
 
-def detect_shapes():
-    image = get_image("coral", "1", "1.jpg")
+def detect_shapes(image):
     resized = imutils.resize(image, width=300)  # resize to simplify shapes
     ratio = image.shape[0] / float(resized.shape[0])
     edges = cv2.Canny(image,100,200)
@@ -53,7 +54,6 @@ def detect_shapes():
     ret, otsu = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     cv2.imshow("otsu", otsu)
     cv2.waitKey(0)
-
     num_shapes = {}
 
     cnts_ = cv2.findContours(otsu.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
@@ -89,5 +89,45 @@ def detect_shapes():
     return num_shapes
 
 
-num_shapes = detect_shapes()
-print(num_shapes)
+def get_Order(Color_values, dominant):
+    order = [0, 1, 2]
+    temp = [0] *3
+    for j in range(0, 3):
+        temp[j] = Color_values[dominant][j]
+    count =0
+    while (count < 2):
+        for iter in range(0,2):
+            if temp[iter] > temp[iter + 1]:
+                hold = temp[iter +1]
+                temp[iter +1] = temp[iter]
+                temp[iter] = hold
+                hold = order[iter]
+                order[iter] = order[iter + 1]
+                order[iter + 1] = hold
+        count += 1
+    return order
+
+#traverse through 2darray Color_values and find largest value in each color RGB.
+def color_check(image):
+    resized = imutils.resize(image, width=300)  # resize to simplify shape
+    NumColors = 3
+    Color_values = get_colors(image, NumColors)
+    Blue = True
+
+    # If Red is largest -> red. if blue is largest ->blue
+    #if (largest - 2nd largest) < (2nd largest - smallest) -> Yellow
+    for dominant in range(0, NumColors):
+        order = get_Order(Color_values, dominant)
+        if order[2] == 2:
+            print("star")
+            Blue = False
+        elif (Color_values[dominant][order[2]] - Color_values[dominant][order[1]]) < (Color_values[dominant][order[1]] - Color_values[dominant][order[0]]):
+            print("fragment")
+            Blue = False
+    if Blue:
+        num_shapes = detect_shapes(image)
+        print(num_shapes)
+
+
+image = get_image("objects", "1", "sponge", "7.jpg")
+color_check(image)

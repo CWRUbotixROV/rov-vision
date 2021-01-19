@@ -51,16 +51,16 @@ def click_and_crop(event, x, y, flags, param):
 
         cv2.imshow("image", image)        
 
-ap = argparse.ArgumentParser()
-ap.add_argument("-i", "--image", required=True, help="Path to image")
-args = vars(ap.parse_args())
+#ap = argparse.ArgumentParser()
+#ap.add_argument("-i", "--image", required=True, help="Path to image")
+#args = vars(ap.parse_args())
 
 def detect_shapes():
     image = cv2.imread('final_benthic.png', cv2.IMREAD_COLOR)
     blank = cv2.imread('blank.png', cv2.IMREAD_COLOR) 
-    clone = image.copy()
+    #clone = image.copy()
     cv2.namedWindow("image")
-    cv2.setMouseCallback("image", click_and_crop, [clone])
+    cv2.setMouseCallback("image", click_and_crop, [image])
 
     while True:
         cv2.imshow("image",image)
