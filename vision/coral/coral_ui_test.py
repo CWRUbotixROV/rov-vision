@@ -1,6 +1,9 @@
 import cv2
 from vision.coral.coral_ui import Coral
 from vision.images import get_image
+from vision import config
+
+config.debug = True
 
 test_image = get_image("coral", "1", "1.jpg")
 

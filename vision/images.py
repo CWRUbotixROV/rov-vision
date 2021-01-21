@@ -2,7 +2,7 @@
 
 import cv2
 from os import path, walk
-from vision import images_path
+from vision import images_path, config
 
 def get_image(*paths):
     """Returns the image at the specified path with each folder as a separate argument.
@@ -28,3 +28,19 @@ def get_all_images(*paths):
             pass
     return images
 
+def get_video(*paths):
+    """Returns a VideoCapture object from a video file at the specified path with each folder as a separate argument."""
+    return cv2.VideoCapture(path.join(images_path, *paths))
+
+def show_debug(image, name="Image", wait=True):
+    """
+    If it is running in debug mode, then the given image will be displayed.
+    Parameters:
+    image: The image to display
+    name (str): The name of the window (Default "Image")
+    wait (bool): If true, code will stop execution until a key is pressed (Default True)
+    """
+    if config.debug:
+        cv2.imshow(name, image)
+        if wait:
+            cv2.waitKey(0)

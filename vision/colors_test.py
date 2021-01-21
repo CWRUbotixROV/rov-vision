@@ -1,6 +1,9 @@
 from vision.colors import *
-from vision.images import *
+from vision.images import get_image
+from vision import config
 
-image = get_image("objects", "1", "fragment", "4.jpg")
+config.debug = True
 
-get_colors(image, 3)
+image = get_image("coral", "1", "1.jpg")
+
+print(get_colors(image, 10))

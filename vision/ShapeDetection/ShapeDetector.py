@@ -1,10 +1,14 @@
 import cv2
 import imutils
+from vision import config
 from vision.coral.coral_ui import Coral
 from vision.images import get_image
 from vision.colors import *
 from vision.images import *
 import numpy as np
+
+#Debug Mode on
+config.debug = True
 
 class ShapeDetector:
     def __init__(self):
@@ -18,7 +22,7 @@ class ShapeDetector:
         #print(len(approx))
         if len(approx)==2:
             shape = 'line'
-        elif len(approx)== 8:
+        elif len(approx)== 8: #failsafe if color detection fails
             shape = 'star'
         elif len(approx)==4:    # could be square or line
             (x, y, w, h) = cv2.boundingRect(approx)
@@ -52,8 +56,7 @@ def detect_shapes(image):
 
     # Here we use an adaptive threshold on the image, since we expect the lighting to be non-uniform.
     ret, otsu = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-    cv2.imshow("otsu", otsu)
-    cv2.waitKey(0)
+    show_debug(otsu, name ="otsu", wait = True)
     num_shapes = {}
 
     cnts_ = cv2.findContours(otsu.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
@@ -81,14 +84,11 @@ def detect_shapes(image):
             c = c.astype(int)
             cv2.drawContours(image, [c], -1, (255, 0, 0), 2)
             cv2.putText(image, shape, (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
-
-
-    cv2.imshow("Image", image)
-    cv2.imwrite('image.png', image)
-    cv2.waitKey(0)
+    show_debug(image)
     return num_shapes
 
-
+#takes in a 2D array of NumColors arrays of [Blue, Green, Red] values
+#sorts the values in order of least to greatest and returns an array containing the order of the RGB values from least to greatest
 def get_Order(Color_values, dominant):
     order = [0, 1, 2]
     temp = [0] *3
@@ -110,12 +110,16 @@ def get_Order(Color_values, dominant):
 #traverse through 2darray Color_values and find largest value in each color RGB.
 def color_check(image):
     resized = imutils.resize(image, width=300)  # resize to simplify shape
+
+    #Number of colors to find in image
     NumColors = 3
     Color_values = get_colors(image, NumColors)
+
+    #Boolean representing lack of nonBlue color
     Blue = True
 
-    # If Red is largest -> red. if blue is largest ->blue
-    #if (largest - 2nd largest) < (2nd largest - smallest) -> Yellow
+    #If Red value is largest -> red=star;If blue value is largest ->blue=>send to shapeDetection
+    #if (largest - 2nd largest) < (2nd largest - smallest) -> Yellow=fragment
     for dominant in range(0, NumColors):
         order = get_Order(Color_values, dominant)
         if order[2] == 2:
