@@ -151,7 +151,7 @@ def start_mapping(video):
     cv2.createTrackbar("Thresh1", "Trackbar", 87, 255, empty)
     cv2.createTrackbar("Thresh2", "Trackbar", 230, 255, empty)
 
-    clear_folder("")
+    clear_folder("transect", "squares")
 
     while video.isOpened():
         ret, frame = video.read()
@@ -175,8 +175,8 @@ def start_mapping(video):
 
         get_contours(lines, frame)
 
-        cv2.imshow("frame", frame)
-        # cv2.imshow("lines", lines)
+        # cv2.imshow("frame", frame)
+        show_debug(frame, name="frame", wait=False)
 
         if cv2.waitKey(25) & 0xFF == ord('q'):
             break
@@ -224,7 +224,7 @@ def find_blue_poles(video):
 
         # Displaying the videos
         # cv2.imshow("lines", lines)
-        cv2.imshow("frame", frame)
+        show_debug(frame, name="frame", wait=False)
 
         if cv2.waitKey(25) & 0xFF == ord('q'):
             break

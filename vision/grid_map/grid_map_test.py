@@ -2,6 +2,8 @@ from vision.grid_map.grid_map import *
 from vision.colors import *
 from vision.images import *
 
+config.debug = True
+
 video = get_video("transect", "transect.MOV")
 video2 = get_video("transect", "transect2.mp4")
 
