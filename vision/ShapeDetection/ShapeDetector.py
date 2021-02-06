@@ -107,6 +107,39 @@ def get_Order(Color_values, dominant):
         count += 1
     return order
 
+#Convert RGB values to HSL
+def HSL_Converter(Color_values, dominant, order):
+    #Convert RGB to range 0-1
+    for j in range (0,3):
+        Color_values[dominant][j] = Color_values[dominant][j] / 255
+    min = Color_values[dominant][order[0]]
+    max = Color_values[dominant][2]
+
+    #Luminance calculation
+    Luminance = (max + min) / 2
+    #Saturation calculation
+    if Luminance <= 0.5:
+        Saturation = (max - min)/(max + min)
+    else:
+        Saturation = (max - min) / (2-max-min)
+    #hue calculation
+    Hue = (Color_values[dominant][1] - Color_values[dominant][0]) /(max - min)
+    Hue = Hue * 60
+    if Hue < 0:
+        Hue += 360
+
+    HSL = [Hue, Saturation *100, Luminance * 100]
+    #print(HSL)
+    return HSL
+
+#interprets HSL values
+def HSL_reader(HSL):
+    if HSL[0] >40:
+        if HSL[2] > HSL[1]:
+            print("star")
+        elif HSL[1] > HSL[2]:
+            print("coral")
+
 #traverse through 2darray Color_values and find largest value in each color RGB.
 def color_check(image):
     resized = imutils.resize(image, width=300)  # resize to simplify shape
@@ -114,6 +147,7 @@ def color_check(image):
     #Number of colors to find in image
     NumColors = 3
     Color_values = get_colors(image, NumColors)
+    print(Color_values)
 
     #Boolean representing lack of nonBlue color
     Blue = True
@@ -123,7 +157,7 @@ def color_check(image):
     for dominant in range(0, NumColors):
         order = get_Order(Color_values, dominant)
         if order[2] == 2:
-            print("star")
+            HSL_reader(HSL_Converter(Color_values, dominant, order))
             Blue = False
         elif (Color_values[dominant][order[2]] - Color_values[dominant][order[1]]) < (Color_values[dominant][order[1]] - Color_values[dominant][order[0]]):
             print("fragment")
@@ -133,5 +167,5 @@ def color_check(image):
         print(num_shapes)
 
 
-image = get_image("objects", "1", "sponge", "7.jpg")
+image = get_image("objects", "1", "coral", "R2.jpg")
 color_check(image)
