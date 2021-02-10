@@ -1,6 +1,7 @@
 """Contains methods to get testing images from the images directory"""
 
 import cv2
+import os
 from os import path, walk
 from vision import images_path, config
 
@@ -31,6 +32,21 @@ def get_all_images(*paths):
 def get_video(*paths):
     """Returns a VideoCapture object from a video file at the specified path with each folder as a separate argument."""
     return cv2.VideoCapture(path.join(images_path, *paths))
+
+def get_folder(*paths):
+    """Returns the path of the specified folder
+    For example: 'get_folder("transect", "frames")'"""
+    return path.join(images_path, *paths)
+
+def clear_folder(*paths):
+    """Deletes all files in a folder.
+    For example: `clear_folder("transect", "frames")`"""
+    (dirpath, _, filenames) = next(walk(path.join(images_path, *paths)))
+    for file in filenames:
+        try:
+            os.remove(path.join(dirpath, file))
+        except:
+            pass
 
 def show_debug(image, name="Image", wait=True):
     """
