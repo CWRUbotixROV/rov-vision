@@ -141,6 +141,44 @@ def screenshot_squares(squares, frame):
             file_name = str(s.id) + "(" + str(s.screenshot_num) + ").jpg"
             cv2.imwrite(get_folder("transect", "squares") + "/" + file_name, roi)
 
+def display_grid():
+    cell_size = 150
+    padding = 8 # Line thickness
+    border = 100 # Border around grid
+
+    width = 3 * cell_size + 4 * padding  # width of window
+    height = 9 * cell_size + 10 * padding  # height of window
+
+    img = np.zeros((height + 2 * border, width + 2 * border, 3), dtype=np.uint8)
+    img.fill(255)
+
+    start_x = border + padding
+    start_y = border + padding
+
+    # Draw vertical griid lines
+    for i in range(4):
+        cv2.line(img, (start_x, start_y), (start_x, height + border), (0, 0, 0), padding, 1)
+        start_x += cell_size + padding
+
+    start_x = border + padding # Reset x position
+
+    # Draw horizontal grid lines
+    for i in range(10):
+        cv2.line(img, (start_x, start_y), (width + border, start_y), (0, 0, 0), padding, 1)
+        start_y += cell_size + padding
+
+    # Insert text
+    text = "Side of pool"
+    font = cv2.FONT_HERSHEY_SIMPLEX
+
+    text_size = cv2.getTextSize(text, font, 2, 2)[0]
+    text_x = int((img.shape[1] - text_size[0]) / 2)
+    text_y = int(border + height + border/1.5)
+
+    cv2.putText(img, text, (text_x, text_y), font, 2, (0, 0, 0))
+    show_debug(img, name="frame", wait=True)
+
+
 # Used for trackbar
 def empty(a):
     pass

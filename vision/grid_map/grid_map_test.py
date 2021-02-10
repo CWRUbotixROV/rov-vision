@@ -6,9 +6,12 @@ config.debug = True
 
 video = get_video("transect", "transect.MOV")
 video2 = get_video("transect", "transect2.mp4")
+video3 = get_video("transect", "1", "1.mp4")
+video4 = get_video("transect", "1", "2.mp4")
 
 # Tests square detection
-start_mapping(video)
+# start_mapping(video)
+display_grid()
 
 # Tests color and line detection
 # find_blue_poles(video)
