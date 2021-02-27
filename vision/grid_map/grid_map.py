@@ -4,32 +4,11 @@ from vision.images import *
 import cv2
 import numpy as np
 
-def image_stitching():
-    """Stitches images together
-    No arguments"""
-    print("Starting image stitching")
-
-    frames = get_all_images("transect", "frames")
-
-    stitcher = cv2.Stitcher.create(mode=cv2.STITCHER_SCANS)
-    ret, stitched_img = stitcher.stitch(frames)
-
-    if ret == cv2.STITCHER_OK:
-        stitched_img = cv2.resize(stitched_img, (0, 0), None, .5, .5)
-        cv2.imshow("Final Image", stitched_img)
-
-        cv2.imwrite(get_folder("transect") + "/stitched_img.jpg", stitched_img)
-
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-
-    else:
-        print("Error during stitching")
 
 def draw_lines(frame, mask):
     """Draws HoughLines on image
     For example: 'draw_lines(frame, edges)'"""
-    lines = cv2.HoughLinesP(mask, 1, np.pi/180, 100, minLineLength=150, maxLineGap=100)
+    lines = cv2.HoughLinesP(mask, 1, np.pi / 180, 100, minLineLength=150, maxLineGap=100)
 
     if lines is not None:
         for i in range(len(lines)):
@@ -37,6 +16,16 @@ def draw_lines(frame, mask):
 
             x1, y1, x2, y2 = line.reshape(4)
             cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+
+class GridMapper:
+    def __init__(self, id, squares=[], images=[]):
+        self.id = id  # Unique ID for each square
+        self.squares = squares  # Tracks square objects
+        self.images = images
+
+    def update_id(self):
+        self.id += 1
 
 class Square:
     def __init__(self, id, x, y, w, h):
@@ -49,8 +38,6 @@ class Square:
         self.delete = 0  # Tracks num of frames visible = False
         self.screenshot_num = 0  # Tracks num of screenshots taken per square
 
-squares = []  # Tracks square objects
-id = 0  # Unique ID for each square
 
 def get_contours(mask, frame):
     curr_squares = []  # Squares in the current frame
@@ -66,24 +53,24 @@ def get_contours(mask, frame):
             # Check if the contour has 4 sides
             if len(approx) == 4:
                 x, y, w, h = cv2.boundingRect(approx)
-                aspect_ratio = float(w)/h
+                aspect_ratio = float(w) / h
 
                 # Check if sides are equal-ish lengths
                 if .5 <= aspect_ratio <= 1.5:
                     curr_squares.append(Square(-1, x, y, w, h))
 
-    find_squares(curr_squares, frame)
+    return curr_squares
 
-def find_squares(curr_squares, frame):
-    global id
-    global squares  # Square objects already being tracked
+
+def find_squares(curr_squares, frame, grid_mapper):
+    squares = grid_mapper.squares  # Square objects already being tracked
     matched = []  # id of squares in curr_squares matched to a square in squares
 
     # Check if a square should be tracked or deleted
     if len(squares) == 0:
         for s in curr_squares:
-            id += 1
-            s.id = id
+            grid_mapper.update_id()
+            s.id = grid_mapper.id
             squares.append(s)
             matched.append(s)
 
@@ -118,33 +105,50 @@ def find_squares(curr_squares, frame):
     if len(curr_squares) != len(matched):
         for s in curr_squares:
             if s.id not in matched:
-                id += 1
-                s.id = id
+                grid_mapper.update_id()
+                s.id = grid_mapper.id
                 matched.append(s.id)
                 squares.append(s)
 
-    screenshot_squares(squares, frame)
+    screenshot_squares(squares, frame, grid_mapper)
 
     # Drawing squares on the frame
-    for s in squares:
-        if s.visible:
-            cv2.putText(frame, str(s.id), (s.x + int(s.w / 2), s.y + int(s.w / 2)),
-                        cv2.FONT_HERSHEY_DUPLEX, 1, (0, 255, 0))
-            cv2.rectangle(frame, (s.x, s.y), (s.x + s.w, s.y + s.h), (0, 255, 0), 5)
+    if config.debug:
+        for s in squares:
+            if s.visible:
+                cv2.putText(frame, str(s.id), (s.x + int(s.w / 2), s.y + int(s.w / 2)),
+                            cv2.FONT_HERSHEY_DUPLEX, 1, (0, 255, 0))
+                cv2.rectangle(frame, (s.x, s.y), (s.x + s.w, s.y + s.h), (0, 255, 0), 5)
 
-def screenshot_squares(squares, frame):
+class SquareImage:
+    def __init__(self, name, image):
+        self.name = name
+        self.image = image
+
+
+def screenshot_squares(squares, frame, grid_mapper):
     for s in squares:
         if s.screenshot_num != 5:
             s.screenshot_num += 1
 
             roi = frame[s.y:s.y + s.h, s.x:s.x + s.w]
-            file_name = str(s.id) + "(" + str(s.screenshot_num) + ").jpg"
-            cv2.imwrite(get_folder("transect", "squares") + "/" + file_name, roi)
+            image_name = str(s.id) + "(" + str(s.screenshot_num) + ")"
+            grid_mapper.images.append(SquareImage(image_name, roi))
+
+            # file_name = str(s.id) + "(" + str(s.screenshot_num) + ").jpg"
+            # cv2.imwrite(get_folder("transect", "squares") + "/" + file_name, roi)
+
+# Class for the shapes that need to be mapped
+class Shape:
+    def __init__(self, name, square_id):
+        self.name = name
+        self.square_id = square_id  # What square(s) it is located in
+
 
 def display_grid():
     cell_size = 150
-    padding = 8 # Line thickness
-    border = 100 # Border around grid
+    padding = 8  # Line thickness
+    border = 100  # Border around grid
 
     width = 3 * cell_size + 4 * padding  # width of window
     height = 9 * cell_size + 10 * padding  # height of window
@@ -152,20 +156,36 @@ def display_grid():
     img = np.zeros((height + 2 * border, width + 2 * border, 3), dtype=np.uint8)
     img.fill(255)
 
+    # Draw vertical grid lines
     start_x = border + padding
-    start_y = border + padding
+    start_y = start_x
 
-    # Draw vertical griid lines
     for i in range(4):
         cv2.line(img, (start_x, start_y), (start_x, height + border), (0, 0, 0), padding, 1)
         start_x += cell_size + padding
 
-    start_x = border + padding # Reset x position
-
     # Draw horizontal grid lines
+    start_x = border + padding  # Reset x position
+
     for i in range(10):
         cv2.line(img, (start_x, start_y), (width + border, start_y), (0, 0, 0), padding, 1)
         start_y += cell_size + padding
+
+    # Getting coords for each cell
+    cell_coords = []
+
+    start_x = int(border + padding + cell_size / 2)
+    start_y = start_x
+
+    for i in range(9):
+        for j in range(3):
+            cell_coords.append([start_x, start_y])
+            start_x += padding + cell_size
+
+        start_x = int(border + padding + cell_size / 2)
+        start_y += padding + cell_size
+
+    # cv2.circle(img, (start_x, start_y), int(cell_size / 2 * .8), (0, 0, 0), 1)
 
     # Insert text
     text = "Side of pool"
@@ -173,99 +193,27 @@ def display_grid():
 
     text_size = cv2.getTextSize(text, font, 2, 2)[0]
     text_x = int((img.shape[1] - text_size[0]) / 2)
-    text_y = int(border + height + border/1.5)
+    text_y = int(border + height + border / 1.5)
 
     cv2.putText(img, text, (text_x, text_y), font, 2, (0, 0, 0))
     show_debug(img, name="frame", wait=True)
 
 
-# Used for trackbar
-def empty(a):
-    pass
+# Inserts shapes on the grid display
+def insert_shapes(shape, img, cell_coords, cell_size):
+    if len(shape.square_id) == 1:
+        x, y = cell_coords[shape.square_id[0]]
+    elif len(shape.square_id) == 2:
+        x, y = cell_coords[shape.square_id[0]]
+        x2, y2 = cell_coords[shape.square_id[1]]
 
-def start_mapping(video):
+    if shape.name == "sea star":
+        cv2.circle(img, (x, y), int(cell_size / 2 * .8), (0, 0, 0), 1)
 
-    cv2.namedWindow("Trackbar")
-    cv2.createTrackbar("Thresh1", "Trackbar", 87, 255, empty)
-    cv2.createTrackbar("Thresh2", "Trackbar", 230, 255, empty)
+    elif shape.name == "sponge":
+        cv2.circle(img, (x, y), int(cell_size / 2 * .8), (0, 0, 0), 1)
 
-    clear_folder("transect", "squares")
-
-    while video.isOpened():
-        ret, frame = video.read()
-
-        if not ret:
-            break
-
-        blur = cv2.GaussianBlur(frame, (7, 7), 1)
-
-        thresh1 = cv2.getTrackbarPos("Thresh1", "Trackbar")
-        thresh2 = cv2.getTrackbarPos("Thresh2", "Trackbar")
-
-        canny = cv2.Canny(blur, thresh1, thresh2)
-
-        lines = np.zeros_like(frame)
-        draw_lines(lines, canny)
-
-        kernel = np.ones((10, 10))
-        lines = cv2.dilate(lines, kernel, iterations=1)
-        lines = cv2.cvtColor(lines, cv2.COLOR_BGR2GRAY)
-
-        get_contours(lines, frame)
-
-        # cv2.imshow("frame", frame)
-        show_debug(frame, name="frame", wait=False)
-
-        if cv2.waitKey(25) & 0xFF == ord('q'):
-            break
-
-    video.release()
-    cv2.destroyAllWindows()
-
-def find_blue_poles(video):
-    """Detects where the two blue poles are
-    For example: 'start_mapping("get_video("transect", "transect.MOV")")'"""
-    frame_num = 0  # For naming frames
-    count = 0  # Tracks frame count
-
-    # Clear frames folder
-    clear_folder("transect", "frames")
-
-    while video.isOpened():
-        ret, frame = video.read()
-
-        if not ret:
-            break
-
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-        # Lower and upper color bounds
-        lower_red = np.array([150, 150, 150])
-        upper_red = np.array([255, 255, 255])
-
-        lower_blue = np.array([100, 200, 100])
-        upper_blue = np.array([110, 255, 255])
-
-        # Creating masks for red and blue
-        r_mask = cv2.inRange(hsv, lower_red, upper_red)  # Red
-        b_mask = cv2.inRange(hsv, lower_blue, upper_blue)  # Blue
-
-        # Draw lines where blue poles are
-        lines = np.zeros_like(frame)
-        draw_lines(frame, b_mask)
-
-        # Get frame every few frames for image stitching
-        if count % 20 == 0:
-            cv2.imwrite(get_folder("transect", "frames") + "/%d.jpg" % frame_num, frame)
-            frame_num += 1
-        count += 1
-
-        # Displaying the videos
-        # cv2.imshow("lines", lines)
-        show_debug(frame, name="frame", wait=False)
-
-        if cv2.waitKey(25) & 0xFF == ord('q'):
-            break
-
-    video.release()
-    cv2.destroyAllWindows()
+    elif shape.name == "coral fragment":
+        cv2.circle(img, (0, 0), int(cell_size / 2 * .8), (0, 0, 0), 1)
+    else:
+        print("ERROR")
