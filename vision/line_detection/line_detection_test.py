@@ -6,4 +6,4 @@ config.debug = True
 
 video = get_video("rov-vision\images\transect\1", "1.mp4")
 
-detect_blue_poles(video)
+draw_lines()
