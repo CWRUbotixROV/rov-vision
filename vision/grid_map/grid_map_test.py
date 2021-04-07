@@ -21,8 +21,8 @@ def empty(a):
 def start_mapping(grid_mapper, video):
 
     cv2.namedWindow("Trackbar")
-    cv2.createTrackbar("Thresh1", "Trackbar", 200, 255, empty)
-    cv2.createTrackbar("Thresh2", "Trackbar", 210, 255, empty)
+    cv2.createTrackbar("Thresh1", "Trackbar", 87, 255, empty)
+    cv2.createTrackbar("Thresh2", "Trackbar", 230, 255, empty)
 
     clear_folder("transect", "squares")
 
@@ -38,7 +38,7 @@ def start_mapping(grid_mapper, video):
         thresh1 = cv2.getTrackbarPos("Thresh1", "Trackbar")
         thresh2 = cv2.getTrackbarPos("Thresh2", "Trackbar")
 
-        canny = cv2.Canny(frame, thresh1, thresh2)
+        canny = cv2.Canny(blur, thresh1, thresh2)
 
         lines = np.zeros_like(frame)
         draw_lines(lines, canny)
@@ -52,7 +52,6 @@ def start_mapping(grid_mapper, video):
         grid_mapper.find_squares(contours, frame, grid_mapper)
 
         show_debug(frame, name="frame", wait=False)
-        show_debug(canny, name="canny", wait=False)
 
         # if cv2.waitKey(25) & 0xFF == ord('q'):
         #     break
@@ -66,6 +65,29 @@ def start_mapping(grid_mapper, video):
     video.release()
     cv2.destroyAllWindows()
 
+def test_display_grid(mapper):
+    squares = []
+
+    for i in range(5):
+        squares.append(Grid_Square(i+1))
+
+    squares[0].classification = Object.FRAGMENT
+    squares[0].grid_num = 2
+
+    squares[1].classification = Object.SPONGE
+    squares[1].grid_num = 15
+
+    squares[2].classification = Object.STAR
+    squares[2].grid_num = 25
+
+    squares[3].classification = Object.CORAL
+    squares[3].grid_num = 17
+
+    squares[4].classification = Object.CORAL
+    squares[4].grid_num = 18
+
+    mapper.display_grid(squares)
+
 config.debug = True
 
 # Testing videos
@@ -75,7 +97,7 @@ video3 = get_video("transect", "1", "1.mp4")
 video4 = get_video("transect", "1", "2.mp4")
 
 # Tests square detection
-grid_mapper = GridMapper()
+mapper = GridMapper()
 
-# start_mapping(grid_mapper, video3)
-grid_mapper.display_grid()
+# start_mapping(mapper, video)
+test_display_grid(mapper)

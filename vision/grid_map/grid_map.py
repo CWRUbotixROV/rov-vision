@@ -1,15 +1,17 @@
 """Contains methods to map video with lines from a mask"""
 
 from vision.images import *
+from vision.grid_map.grid_square import *
 import cv2
 import numpy as np
 
+
 # Runs grid mapping methods
 class GridMapper:
-    def __init__(self, id=0, squares=[], images=[]):
-        self.id = id  # Unique ID for each square
-        self.squares = squares  # Tracks square objects
-        self.images = images
+    def __init__(self):
+        self.id = 0  # Unique ID for each square
+        self.squares = []  # Tracks square objects
+        self.images = []
 
     def update_frame(self, frame):
         return
@@ -84,7 +86,7 @@ class GridMapper:
                     matched.append(s.id)
                     squares.append(s)
 
-        self.screenshot_squares(squares, frame, grid_mapper)
+        self.screenshot_squares(squares, frame)
 
         # Drawing squares on the frame
         if config.debug:
@@ -94,20 +96,30 @@ class GridMapper:
                                 cv2.FONT_HERSHEY_DUPLEX, 1, (0, 255, 0))
                     cv2.rectangle(frame, (s.x, s.y), (s.x + s.w, s.y + s.h), (0, 255, 0), 5)
 
-    def screenshot_squares(self, squares, frame, grid_mapper):
+    def screenshot_squares(self, squares, frame):
         for s in squares:
             if s.screenshot_num != 5:
                 s.screenshot_num += 1
 
                 roi = frame[s.y:s.y + s.h, s.x:s.x + s.w]
-                image_name = str(s.id) + "(" + str(s.screenshot_num) + ")"
-                grid_mapper.images.append(Screenshot(image_name, roi))
+                self.images.append(Screenshot(s.id, roi))
 
-                # file_name = str(s.id) + "(" + str(s.screenshot_num) + ").jpg"
-                # cv2.imwrite(get_folder("transect", "squares") + "/" + file_name, roi)
+    def create_grid_squares(self):
+        all_grid_squares = []  # Contains all Grid_Square objects
 
-    def display_grid(self):
-        cell_size = 150
+        # Creating 27 Grid_Squares
+        for i in range(27):
+            all_grid_squares.append(Grid_Square(i + 1))
+
+        # Adding screenshots to the Grid_Squares
+        for i in range(len(self.images)):
+            screenshot = self.images[i]
+            all_grid_squares[screenshot.id - 1].images.append(screenshot.image)
+
+        return all_grid_squares
+
+    def display_grid(self, all_grid_squares):
+        cell_size = 150  # Size of each cell
         padding = 8  # Line thickness
         border = 100  # Border around grid
 
@@ -158,45 +170,47 @@ class GridMapper:
 
         cv2.putText(img, text, (text_x, text_y), font, 2, (0, 0, 0))
 
-        # Inserting shapes on the grid display
-        shape1 = Shape("sea star", [25])
-        shape2 = Shape("sponge", [2])
-        shape3 = Shape("coral fragment", [15])
-        shape4 = Shape("coral colony", [4, 7])
-        shape5 = Shape("coral colony", [17, 18])
+        # Inserting objects onto the final grid
+        coral_squares = []  # Necessary because coral is in 2 squares
 
-        self.insert_shapes(img, shape1, cell_coords, cell_size, padding)
-        self.insert_shapes(img, shape2, cell_coords, cell_size, padding)
-        self.insert_shapes(img, shape3, cell_coords, cell_size, padding)
-        self.insert_shapes(img, shape4, cell_coords, cell_size, padding)
-        self.insert_shapes(img, shape5, cell_coords, cell_size, padding)
+        for s in all_grid_squares:
+            if s.classification is not None:
+                if s.classification != Object.CORAL:
+                    self.insert_shapes(img, s.classification, [s.grid_num], cell_coords, cell_size, padding)
+
+                else:
+                    # Wait until both coral squares are found before calling insert_shapes
+                    coral_squares.append(s.grid_num)
+
+                    if len(coral_squares) == 2:
+                        self.insert_shapes(img, s.classification, coral_squares, cell_coords, cell_size, padding)
 
         show_debug(img, name="frame", wait=True)
 
     # Inserts shapes on the grid display
-    def insert_shapes(self, img, shape, cell_coords, cell_size, padding):
-        thickness = 5 # Line thickness
+    def insert_shapes(self, img, classification, grid_num, cell_coords, cell_size, padding):
+        thickness = 5  # Line thickness
 
         # Circle
-        if len(shape.square_id) == 1:
-            x, y = cell_coords[shape.square_id[0]-1]
+        if classification != Object.CORAL:
+            x, y = cell_coords[grid_num[0] - 1]
+
+            # Drawing the square on the grid
+            if classification == Object.STAR:
+                cv2.circle(img, (x, y), int(cell_size / 2 * .8), (255, 0, 0), thickness)  # Blue circle
+
+            elif classification == Object.SPONGE:
+                cv2.circle(img, (x, y), int(cell_size / 2 * .8), (0, 255, 0), thickness)  # Green circle
+
+            elif classification == Object.FRAGMENT:
+                cv2.circle(img, (x, y), int(cell_size / 2 * .8), (0, 255, 255), thickness)  # Yellow circle
 
         # Ellipse
-        elif len(shape.square_id) == 2:
-            x, y = cell_coords[shape.square_id[0]-1]
-            x2, y2 = cell_coords[shape.square_id[1]-1]
+        else:
+            # Check if both squares have been found before drawing
+            x, y = cell_coords[grid_num[0] - 1]
+            x2, y2 = cell_coords[grid_num[1] - 1]
 
-        # Drawing the shape on the grid
-        if shape.name == "sea star":
-            cv2.circle(img, (x, y), int(cell_size / 2 * .8), (255, 0, 0), thickness)
-
-        elif shape.name == "sponge":
-            cv2.circle(img, (x, y), int(cell_size / 2 * .8), (0, 255, 0), thickness)
-
-        elif shape.name == "coral fragment":
-            cv2.circle(img, (x, y), int(cell_size / 2 * .8), (0, 255, 255), thickness)
-
-        elif shape.name == "coral colony":
             # Getting center coords
             x3 = int((x + x2 + padding) / 2)
             y3 = int((y + y2 + padding) / 2)
@@ -208,10 +222,9 @@ class GridMapper:
                 angle = 0
 
             # Drawing the ellipse
-            cv2.ellipse(img, (x3, y3), (int(cell_size/1.1), int(cell_size/2.8)), angle, 0, 360, (0, 0, 255), thickness)
+            cv2.ellipse(img, (x3, y3), (int(cell_size / 1.1), int(cell_size / 2.8)), angle, 0, 360, (0, 0, 255),
+                        thickness)  # Red ellipse
 
-        else:
-            print("ERROR")
 
 # For tracking squares on the frame
 class Square:
@@ -222,17 +235,12 @@ class Square:
         self.w = w  # width
         self.h = h  # height
         self.visible = True  # True if square is visible in video
-        self.delete = 0  # Tracks num of frames visible = False
+        self.delete = 0  # Tracks num of frames where visible = False
         self.screenshot_num = 0  # Tracks num of screenshots taken per square
+
 
 # For storing screenshots of each square
 class Screenshot:
-    def __init__(self, name, image):
-        self.name = name
+    def __init__(self, id, image):
+        self.id = id
         self.image = image
-
-# Class for the shapes that need to be mapped
-class Shape:
-    def __init__(self, name, square_id):
-        self.name = name
-        self.square_id = square_id  # What square(s) it is located in
