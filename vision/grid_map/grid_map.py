@@ -5,13 +5,14 @@ from vision.grid_map.grid_square import *
 import cv2
 import numpy as np
 
-
 # Runs grid mapping methods
 class GridMapper:
     def __init__(self):
         self.id = 0  # Unique ID for each square
-        self.squares = []  # Tracks square objects
+        self.squares = []  # Tracks square objects on the current frame
+        self.all_squares = []  # All squares
         self.images = []
+        self.frame_area = 0
 
     def update_frame(self, frame):
         return
@@ -24,7 +25,7 @@ class GridMapper:
             area = cv2.contourArea(cnt)
             approx = cv2.approxPolyDP(cnt, .01 * cv2.arcLength(cnt, True), True)
 
-            if area > 10000:
+            if area > self.frame_area * .04:
                 # cv2.drawContours(frame, [approx], 0, (255, 0, 0), 5)
 
                 # Check if the contour has 4 sides
@@ -40,6 +41,7 @@ class GridMapper:
 
     def find_squares(self, curr_squares, frame, grid_mapper):
         squares = grid_mapper.squares  # Square objects already being tracked
+        all_squares = grid_mapper.all_squares
         matched = []  # id of squares in curr_squares matched to a square in squares
 
         # Check if a square should be tracked or deleted
@@ -70,10 +72,22 @@ class GridMapper:
                         s2.delete = 0
                         break
 
+        # Only call find neighbors if there are new squares on the screen
+        find_neighbors = False
+
+        for s in squares:
+            if s not in all_squares:
+                # Adding squares to all squares if they haven't been added
+                all_squares.append(s)
+
+                if not find_neighbors:
+                    self.find_neighbors()
+                    find_neighbors = True
+
         # If a square is not visible for 20 consecutive frames, delete it
         for s in squares:
             if not s.visible:
-                if s.delete == 20:
+                if s.delete == 30:
                     squares.remove(s)
                 else:
                     s.delete += 1
@@ -86,9 +100,9 @@ class GridMapper:
                     matched.append(s.id)
                     squares.append(s)
 
-        self.screenshot_squares(squares, frame)
+        self.screenshot_squares(frame)
 
-        # Drawing squares on the frame
+        # Drawing squares on the frame in debug mode
         if config.debug:
             for s in squares:
                 if s.visible:
@@ -96,8 +110,49 @@ class GridMapper:
                                 cv2.FONT_HERSHEY_DUPLEX, 1, (0, 255, 0))
                     cv2.rectangle(frame, (s.x, s.y), (s.x + s.w, s.y + s.h), (0, 255, 0), 5)
 
-    def screenshot_squares(self, squares, frame):
-        for s in squares:
+    def find_neighbors(self):
+        for i in range(0, len(self.squares)):
+            s = self.squares[i]
+
+            # print(f"ID: {s.id}, x: {s.x}, y: {s.y}")
+
+            for j in range(0, len(self.squares)):
+                s2 = self.squares[j]
+
+                # print(f"ID2: {s2.id}, x: {s2.x}, y: {s2.y}")
+
+                if s != s2:
+                    xdiff = s.x - s2.x
+                    ydiff = s.y - s2.y
+
+                    # Values must be within these tolerances to be neighbors
+                    tol = s.w * 1.4
+                    tol2 = 10
+
+                    # Check left and right
+                    if s.left is None or s.right is None:
+                        if abs(xdiff) <= tol and abs(ydiff) <= tol2:
+                            # s2 is to the left of s1
+                            if xdiff > 0:
+                                s.left = s2
+
+                            # s2 is to the right of s1
+                            else:
+                                s.right = s2
+
+                    # Check up and down
+                    if s.up is None or s.down is None:
+                        if abs(ydiff) <= tol and abs(xdiff) <= tol2:
+                            # s2 is above s1
+                            if ydiff > 0:
+                                s.up = s2
+
+                            # s2 is below s1
+                            else:
+                                s.down = s2
+
+    def screenshot_squares(self, frame):
+        for s in self.squares:
             if s.screenshot_num != 5:
                 s.screenshot_num += 1
 
@@ -197,13 +252,16 @@ class GridMapper:
 
             # Drawing the square on the grid
             if classification == Object.STAR:
-                cv2.circle(img, (x, y), int(cell_size / 2 * .8), (255, 0, 0), thickness)  # Blue circle
+                # Blue circle
+                cv2.circle(img, (x, y), int(cell_size / 2 * .8), (255, 0, 0), thickness)
 
             elif classification == Object.SPONGE:
-                cv2.circle(img, (x, y), int(cell_size / 2 * .8), (0, 255, 0), thickness)  # Green circle
+                # Green circle
+                cv2.circle(img, (x, y), int(cell_size / 2 * .8), (0, 255, 0), thickness)
 
             elif classification == Object.FRAGMENT:
-                cv2.circle(img, (x, y), int(cell_size / 2 * .8), (0, 255, 255), thickness)  # Yellow circle
+                # Yellow circle
+                cv2.circle(img, (x, y), int(cell_size / 2 * .8), (0, 255, 255), thickness)
 
         # Ellipse
         else:
@@ -221,10 +279,9 @@ class GridMapper:
             elif y == y2:
                 angle = 0
 
-            # Drawing the ellipse
+            # Red ellipse
             cv2.ellipse(img, (x3, y3), (int(cell_size / 1.1), int(cell_size / 2.8)), angle, 0, 360, (0, 0, 255),
-                        thickness)  # Red ellipse
-
+                        thickness)
 
 # For tracking squares on the frame
 class Square:
@@ -237,6 +294,12 @@ class Square:
         self.visible = True  # True if square is visible in video
         self.delete = 0  # Tracks num of frames where visible = False
         self.screenshot_num = 0  # Tracks num of screenshots taken per square
+
+        # Neighboring squares
+        self.up = None
+        self.down = None
+        self.left = None
+        self.right = None
 
 
 # For storing screenshots of each square

@@ -2,6 +2,7 @@ from vision.grid_map.grid_map import *
 from vision.colors import *
 from vision.images import *
 
+
 def draw_lines(frame, mask):
     """Draws HoughLines on image
     For example: 'draw_lines(frame, edges)'"""
@@ -14,17 +15,24 @@ def draw_lines(frame, mask):
             x1, y1, x2, y2 = line.reshape(4)
             cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
+
 # Used for trackbar
 def empty(a):
     pass
 
-def start_mapping(grid_mapper, video):
 
+def start_mapping(grid_mapper, video):
     cv2.namedWindow("Trackbar")
     cv2.createTrackbar("Thresh1", "Trackbar", 87, 255, empty)
     cv2.createTrackbar("Thresh2", "Trackbar", 230, 255, empty)
 
     clear_folder("transect", "squares")
+
+    # Getting frame dimensions
+    width = video.get(cv2.CAP_PROP_FRAME_WIDTH)
+    height = video.get(cv2.CAP_PROP_FRAME_HEIGHT)
+
+    grid_mapper.frame_area = width * height
 
     while video.isOpened():
         ret, frame = video.read()
@@ -65,11 +73,12 @@ def start_mapping(grid_mapper, video):
     video.release()
     cv2.destroyAllWindows()
 
+
 def test_display_grid(mapper):
     squares = []
 
     for i in range(5):
-        squares.append(Grid_Square(i+1))
+        squares.append(Grid_Square(i + 1))
 
     squares[0].classification = Object.FRAGMENT
     squares[0].grid_num = 2
@@ -88,6 +97,29 @@ def test_display_grid(mapper):
 
     mapper.display_grid(squares)
 
+def show_neighbors(mapper):
+    print("Format: ID, neighbors[up, down, left, right]")
+
+    for s in mapper.all_squares:
+        up = None
+        down = None
+        left = None
+        right = None
+
+        if s.up is not None:
+            up = s.up.id
+
+        if s.down is not None:
+            down = s.down.id
+
+        if s.left is not None:
+            left = s.left.id
+
+        if s.right is not None:
+            right = s.right.id
+
+        print(f"ID: {s.id} [{up}, {down}, {left}, {right}]")
+
 config.debug = True
 
 # Testing videos
@@ -99,5 +131,7 @@ video4 = get_video("transect", "1", "2.mp4")
 # Tests square detection
 mapper = GridMapper()
 
-# start_mapping(mapper, video)
-test_display_grid(mapper)
+start_mapping(mapper, video2)
+show_neighbors(mapper)
+# test_display_grid(mapper)
+
