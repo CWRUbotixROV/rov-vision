@@ -57,7 +57,7 @@ def start_mapping(grid_mapper, video):
         lines = cv2.cvtColor(lines, cv2.COLOR_BGR2GRAY)
 
         contours = grid_mapper.get_contours(lines, frame)
-        grid_mapper.find_squares(contours, frame, grid_mapper)
+        grid_mapper.find_squares(contours, frame)
 
         show_debug(frame, name="frame", wait=False)
 
@@ -131,7 +131,9 @@ video4 = get_video("transect", "1", "2.mp4")
 # Tests square detection
 mapper = GridMapper()
 
-start_mapping(mapper, video2)
+start_mapping(mapper, video3)
 show_neighbors(mapper)
+# mapper.map_squares()
 # test_display_grid(mapper)
+
 

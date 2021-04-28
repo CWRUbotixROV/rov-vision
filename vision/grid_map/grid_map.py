@@ -10,14 +10,21 @@ class GridMapper:
     def __init__(self):
         self.id = 0  # Unique ID for each square
         self.squares = []  # Tracks square objects on the current frame
-        self.all_squares = []  # All squares
-        self.images = []
+        self.all_squares = []  # All detected squares in the video
+        self.images = []  # Screenshots of all squares
         self.frame_area = 0
+
+        # For final grid image
+        self.cell_size = 150  # Size of each cell
+        self.padding = 8  # Line thickness
+        self.cell_coords = []  # Coordinates for each cell
 
     def update_frame(self, frame):
         return
 
     def get_contours(self, mask, frame):
+        """Detects squares by analyzing the contours of the frame"""
+
         curr_squares = []  # Squares in the current frame
         contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -25,7 +32,7 @@ class GridMapper:
             area = cv2.contourArea(cnt)
             approx = cv2.approxPolyDP(cnt, .01 * cv2.arcLength(cnt, True), True)
 
-            if area > self.frame_area * .04:
+            if self.frame_area * .03 < area < self.frame_area * .25:
                 # cv2.drawContours(frame, [approx], 0, (255, 0, 0), 5)
 
                 # Check if the contour has 4 sides
@@ -35,20 +42,22 @@ class GridMapper:
 
                     # Check if sides are equal-ish lengths
                     if .5 <= aspect_ratio <= 1.5:
-                        curr_squares.append(Square(-1, x, y, w, h))
+                        curr_squares.append(Square(x, y, w, h))
 
         return curr_squares
 
-    def find_squares(self, curr_squares, frame, grid_mapper):
-        squares = grid_mapper.squares  # Square objects already being tracked
-        all_squares = grid_mapper.all_squares
+    def find_squares(self, curr_squares, frame):
+        """Tracks squares and assigns a unique ID to each square"""
+
+        squares = self.squares  # Square objects already being tracked
+        all_squares = self.all_squares
         matched = []  # id of squares in curr_squares matched to a square in squares
 
         # Check if a square should be tracked or deleted
         if len(squares) == 0:
             for s in curr_squares:
                 self.id += 1
-                s.id = grid_mapper.id
+                s.id = self.id
                 squares.append(s)
                 matched.append(s)
 
@@ -87,7 +96,7 @@ class GridMapper:
         # If a square is not visible for 20 consecutive frames, delete it
         for s in squares:
             if not s.visible:
-                if s.delete == 30:
+                if s.delete == 20:
                     squares.remove(s)
                 else:
                     s.delete += 1
@@ -96,7 +105,7 @@ class GridMapper:
             for s in curr_squares:
                 if s.id not in matched:
                     self.id += 1
-                    s.id = grid_mapper.id
+                    s.id = self.id
                     matched.append(s.id)
                     squares.append(s)
 
@@ -111,6 +120,8 @@ class GridMapper:
                     cv2.rectangle(frame, (s.x, s.y), (s.x + s.w, s.y + s.h), (0, 255, 0), 5)
 
     def find_neighbors(self):
+        """Finds neighboring squares (4 square neighborhood)"""
+
         for i in range(0, len(self.squares)):
             s = self.squares[i]
 
@@ -152,6 +163,8 @@ class GridMapper:
                                 s.down = s2
 
     def screenshot_squares(self, frame):
+        """Screenshots each square"""
+
         for s in self.squares:
             if s.screenshot_num != 5:
                 s.screenshot_num += 1
@@ -160,6 +173,7 @@ class GridMapper:
                 self.images.append(Screenshot(s.id, roi))
 
     def create_grid_squares(self):
+        """Creates Grid_Square objects for object detection"""
         all_grid_squares = []  # Contains all Grid_Square objects
 
         # Creating 27 Grid_Squares
@@ -173,45 +187,79 @@ class GridMapper:
 
         return all_grid_squares
 
-    def display_grid(self, all_grid_squares):
-        cell_size = 150  # Size of each cell
-        padding = 8  # Line thickness
-        border = 100  # Border around grid
+    def map_squares(self):
+        left = []
+        middle = []
+        right = []
 
-        width = 3 * cell_size + 4 * padding  # width of window
-        height = 9 * cell_size + 10 * padding  # height of window
+        empty_square = Square(None, None, None, None)
+
+        top_left = empty_square
+        top_middle = empty_square
+        top_right = empty_square
+
+        map = [[empty_square] * 3 for i in range(9)]
+
+        for s in self.all_squares:
+            if s.left is None:
+                left.append(s)
+
+                if s.up is None:
+                    top_left = s
+
+            elif s.right is None:
+                right.append(s)
+
+                if s.up is None:
+                    top_middle = s
+
+            else:
+                middle.append(s)
+
+                if s.up is None:
+                    top_right = s
+
+        # Sorting lists numerically by square id
+        left = sorted(left, key=lambda x: x.id)
+        middle = sorted(middle, key=lambda x: x.id)
+        right = sorted(right, key=lambda x: x.id)
+
+    def display_grid(self, all_grid_squares):
+        """Displays the final grid"""
+
+        border = 100  # Border around grid
+        width = 3 * self.cell_size + 4 * self.padding  # width of window
+        height = 9 * self.cell_size + 10 * self.padding  # height of window
 
         img = np.zeros((height + 2 * border, width + 2 * border, 3), dtype=np.uint8)
         img.fill(255)
 
         # Draw vertical grid lines
-        start_x = border + padding
+        start_x = border + self.padding
         start_y = start_x
 
         for i in range(4):
-            cv2.line(img, (start_x, start_y), (start_x, height + border), (0, 0, 0), padding, 1)
-            start_x += cell_size + padding
+            cv2.line(img, (start_x, start_y), (start_x, height + border), (0, 0, 0), self.padding, 1)
+            start_x += self.cell_size + self.padding
 
         # Draw horizontal grid lines
-        start_x = border + padding  # Reset x position
+        start_x = border + self.padding  # Reset x position
 
         for i in range(10):
-            cv2.line(img, (start_x, start_y), (width + border, start_y), (0, 0, 0), padding, 1)
-            start_y += cell_size + padding
+            cv2.line(img, (start_x, start_y), (width + border, start_y), (0, 0, 0), self.padding, 1)
+            start_y += self.cell_size + self.padding
 
         # Getting coords for each cell
-        cell_coords = []
-
-        start_x = int(border + padding + cell_size / 2)
+        start_x = int(border + self.padding + self.cell_size / 2)
         start_y = start_x
 
         for i in range(9):
             for j in range(3):
-                cell_coords.append([start_x, start_y])
-                start_x += padding + cell_size
+                self.cell_coords.append([start_x, start_y])
+                start_x += self.padding + self.cell_size
 
-            start_x = int(border + padding + cell_size / 2)
-            start_y += padding + cell_size
+            start_x = int(border + self.padding + self.cell_size / 2)
+            start_y += self.padding + self.cell_size
 
         # cv2.circle(img, (start_x, start_y), int(cell_size / 2 * .8), (0, 0, 0), 1)
 
@@ -231,47 +279,48 @@ class GridMapper:
         for s in all_grid_squares:
             if s.classification is not None:
                 if s.classification != Object.CORAL:
-                    self.insert_shapes(img, s.classification, [s.grid_num], cell_coords, cell_size, padding)
+                    self.insert_shapes(img, s.classification, [s.grid_num])
 
                 else:
                     # Wait until both coral squares are found before calling insert_shapes
                     coral_squares.append(s.grid_num)
 
                     if len(coral_squares) == 2:
-                        self.insert_shapes(img, s.classification, coral_squares, cell_coords, cell_size, padding)
+                        self.insert_shapes(img, s.classification, coral_squares)
 
         show_debug(img, name="frame", wait=True)
 
-    # Inserts shapes on the grid display
-    def insert_shapes(self, img, classification, grid_num, cell_coords, cell_size, padding):
+    def insert_shapes(self, img, classification, grid_num):
+        """Inserts shapes onto the final grid image"""
+
         thickness = 5  # Line thickness
 
         # Circle
         if classification != Object.CORAL:
-            x, y = cell_coords[grid_num[0] - 1]
+            x, y = self.cell_coords[grid_num[0] - 1]
 
             # Drawing the square on the grid
             if classification == Object.STAR:
                 # Blue circle
-                cv2.circle(img, (x, y), int(cell_size / 2 * .8), (255, 0, 0), thickness)
+                cv2.circle(img, (x, y), int(self.cell_size / 2 * .8), (255, 0, 0), thickness)
 
             elif classification == Object.SPONGE:
                 # Green circle
-                cv2.circle(img, (x, y), int(cell_size / 2 * .8), (0, 255, 0), thickness)
+                cv2.circle(img, (x, y), int(self.cell_size / 2 * .8), (0, 255, 0), thickness)
 
             elif classification == Object.FRAGMENT:
                 # Yellow circle
-                cv2.circle(img, (x, y), int(cell_size / 2 * .8), (0, 255, 255), thickness)
+                cv2.circle(img, (x, y), int(self.cell_size / 2 * .8), (0, 255, 255), thickness)
 
         # Ellipse
         else:
             # Check if both squares have been found before drawing
-            x, y = cell_coords[grid_num[0] - 1]
-            x2, y2 = cell_coords[grid_num[1] - 1]
+            x, y = self.cell_coords[grid_num[0] - 1]
+            x2, y2 = self.cell_coords[grid_num[1] - 1]
 
             # Getting center coords
-            x3 = int((x + x2 + padding) / 2)
-            y3 = int((y + y2 + padding) / 2)
+            x3 = int((x + x2 + self.padding) / 2)
+            y3 = int((y + y2 + self.padding) / 2)
 
             # Setting the angle of the ellipse w/ respect to the x axis
             if x == x2:
@@ -280,13 +329,13 @@ class GridMapper:
                 angle = 0
 
             # Red ellipse
-            cv2.ellipse(img, (x3, y3), (int(cell_size / 1.1), int(cell_size / 2.8)), angle, 0, 360, (0, 0, 255),
+            cv2.ellipse(img, (x3, y3), (int(self.cell_size / 1.1), int(self.cell_size / 2.8)), angle, 0, 360, (0, 0, 255),
                         thickness)
 
 # For tracking squares on the frame
 class Square:
-    def __init__(self, id, x, y, w, h):
-        self.id = id  # Unique ID for each square
+    def __init__(self, x, y, w, h):
+        self.id = 0  # Unique ID for each square
         self.x = x  # x value
         self.y = y  # y value
         self.w = w  # width
@@ -300,7 +349,6 @@ class Square:
         self.down = None
         self.left = None
         self.right = None
-
 
 # For storing screenshots of each square
 class Screenshot:
