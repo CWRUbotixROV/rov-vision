@@ -19,7 +19,60 @@ class GridMapper:
         self.padding = 8  # Line thickness
         self.cell_coords = []  # Coordinates for each cell
 
+    def draw_lines(self, frame, mask):
+        """Draws HoughLines on image
+        For example: 'draw_lines(frame, edges)'"""
+        lines = cv2.HoughLinesP(mask, 1, np.pi / 180, 100, minLineLength=50, maxLineGap=400)
+
+        if lines is not None:
+            for i in range(len(lines)):
+                line = lines[i]
+
+                x1, y1, x2, y2 = line.reshape(4)
+                cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
     def update_frame(self, frame):
+        contrast = cv2.addWeighted(frame, 1.5, np.zeros(frame.shape, frame.dtype), 0, 0)
+
+        hsv = cv2.cvtColor(contrast, cv2.COLOR_BGR2HSV)
+
+        lower_red = np.array([150, 10, 0])
+        upper_red = np.array([179, 100, 255])
+
+        lower_blue = np.array([30, 100, 50])
+        upper_blue = np.array([130, 255, 255])
+
+        lower_yellow = np.array([25, 100, 50])
+        upper_yellow = np.array([50, 255, 255])
+
+        red_mask = cv2.inRange(hsv, lower_red, upper_red)
+        blue_mask = cv2.inRange(hsv, lower_blue, upper_blue)
+        yellow_mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
+
+        mask = red_mask + blue_mask + yellow_mask
+
+        ksize = 7
+        blur = cv2.GaussianBlur(mask, (ksize, ksize), 1)
+
+        thresh1 = cv2.getTrackbarPos("Thresh1", "Trackbar")
+        thresh2 = cv2.getTrackbarPos("Thresh2", "Trackbar")
+
+        canny = cv2.Canny(blur, thresh1, thresh2)
+
+        lines = np.zeros_like(frame)
+        self.draw_lines(lines, canny)
+
+        ksize2 = 10
+        kernel = np.ones((ksize2, ksize2))
+        lines = cv2.dilate(lines, kernel, iterations=1)
+        lines = cv2.cvtColor(lines, cv2.COLOR_BGR2GRAY)
+
+        contours = self.get_contours(lines, frame)
+        self.find_squares(contours, frame)
+
+        show_debug(frame, name="frame", wait=False)
+        # show_debug(lines, name="lines", wait=False)
+
         return
 
     def get_contours(self, mask, frame):
@@ -38,10 +91,11 @@ class GridMapper:
                 # Check if the contour has 4 sides
                 if len(approx) == 4:
                     x, y, w, h = cv2.boundingRect(approx)
-                    aspect_ratio = float(w) / h
 
                     # Check if sides are equal-ish lengths
-                    if .5 <= aspect_ratio <= 1.5:
+                    dim_error = (abs(w - h)/w)  # Error between width and height
+
+                    if dim_error < .2:
                         curr_squares.append(Square(x, y, w, h))
 
         return curr_squares
@@ -68,7 +122,7 @@ class GridMapper:
             for s1 in curr_squares:
                 for s2 in squares:
                     # If a detected square is similar to a square already being tracked, update the square's info
-                    if np.allclose([s1.x, s1.y, s1.w, s1.h], [s2.x, s2.y, s2.w, s2.h], atol=50):
+                    if np.allclose([s1.x, s1.y, s1.w, s1.h], [s2.x, s2.y, s2.w, s2.h], atol=100):
                         s2.x = s1.x
                         s2.y = s1.y
                         s2.w = s1.w
