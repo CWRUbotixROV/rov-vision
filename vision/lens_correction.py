@@ -1,19 +1,19 @@
 import numpy as np
 import cv2
 
-DIM=(640, 480)
+#DIM=(640, 480)
 # K=np.array([[248.03350661168776, 0.0, 330.5324270301757], [0.0, 249.47801268319506, 250.434877474223], [0.0, 0.0, 1.0]])
 # D=np.array([[0.001076093769471156], [-0.029445141629456474], [0.011446340748514342], [-0.002986122649406739]])
 
-K=np.array([[377.3888646039447, 0.0, 327.4794856163454], [0.0, 376.9743701067552, 218.40744705923333], [0.0, 0.0, 1.0]])
-D=np.array([[-0.04766298130789896], [-0.026480276293633788], [0.09205241438909044], [-0.08608273587396821]])
+#K=np.array([[377.3888646039447, 0.0, 327.4794856163454], [0.0, 376.9743701067552, 218.40744705923333], [0.0, 0.0, 1.0]])
+#D=np.array([[-0.04766298130789896], [-0.026480276293633788], [0.09205241438909044], [-0.08608273587396821]])
 def undistort(img):
     h,w = img.shape[:2]
     map1, map2 = cv2.fisheye.initUndistortRectifyMap(K, D, np.eye(3), K, DIM, cv2.CV_16SC2)
     undistorted_img = cv2.remap(img, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
     return undistorted_img
 
-def undistort(img, balance=0.0, dim2=None, dim3=None):
+def undistort(img, DIM, K, D, balance=0.0, dim2=None, dim3=None):
     dim1 = img.shape[:2][::-1]  #dim1 is the dimension of input image to un-distort
     assert dim1[0]/dim1[1] == DIM[0]/DIM[1], "Image to undistort needs to have same aspect ratio as the ones used in calibration"
     if not dim2:
@@ -34,5 +34,6 @@ if __name__ == '__main__':
         cv2.imshow("Undistort", img)
         cv2.waitKey(0)
         if img is not None:
+            img = img[0:1080, 240:1680]
             cv2.imshow("Image", undistort(img, balance=0.25))
             cv2.waitKey(1)
