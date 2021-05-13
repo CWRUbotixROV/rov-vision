@@ -14,12 +14,15 @@ objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane.
 #images = get_all_images("calibration")
 images = [get_image("calibration", "1.jpg")]
-cam = cv2.VideoCapture(0)
+cam = cv2.VideoCapture(1)
+cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 while True:
     ret, img = cam.read()
     if img is None:
         continue
     if _img_shape == None and img is not None:
+        print(img.shape)
         _img_shape = img.shape[:2]
     else:
         pass
@@ -31,7 +34,7 @@ while True:
     # Find the chess board corners
     #corners, score = checkerboard.detect_checkerboard(img, CHECKERBOARD)
     ret, corners = cv2.findChessboardCorners(gray, CHECKERBOARD, cv2.CALIB_CB_ADAPTIVE_THRESH+cv2.CALIB_CB_FAST_CHECK+cv2.CALIB_CB_NORMALIZE_IMAGE)
-    print(type(corners))
+    
     # If found, add object points, image points (after refining them)
     if ret == True:
         objpoints.append(objp)
