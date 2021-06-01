@@ -2,6 +2,7 @@
 
 from vision.images import *
 from vision.grid_map.grid_square import *
+from vision.colors import *
 import cv2
 import numpy as np
 
@@ -22,7 +23,7 @@ class GridMapper:
     def draw_lines(self, frame, mask):
         """Draws HoughLines on image
         For example: 'draw_lines(frame, edges)'"""
-        lines = cv2.HoughLinesP(mask, 1, np.pi / 180, 100, minLineLength=50, maxLineGap=400)
+        lines = cv2.HoughLinesP(mask, 1, np.pi / 180, 100, minLineLength=400, maxLineGap=400)
 
         if lines is not None:
             for i in range(len(lines)):
@@ -34,9 +35,14 @@ class GridMapper:
     def update_frame(self, frame):
         contrast = cv2.addWeighted(frame, 1.5, np.zeros(frame.shape, frame.dtype), 0, 0)
 
-        hsv = cv2.cvtColor(contrast, cv2.COLOR_BGR2HSV)
+        # Blurring the frame
+        ksize = 7
+        blur = cv2.GaussianBlur(frame, (ksize, ksize), 1)
 
-        lower_red = np.array([150, 10, 0])
+        # Create color masks for grid
+        hsv = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
+
+        lower_red = np.array([160, 10, 0])
         upper_red = np.array([179, 100, 255])
 
         lower_blue = np.array([30, 100, 50])
@@ -51,52 +57,66 @@ class GridMapper:
 
         mask = red_mask + blue_mask + yellow_mask
 
-        ksize = 7
-        blur = cv2.GaussianBlur(mask, (ksize, ksize), 1)
+        # Creating red mask for removing objects
+        lower_obj = np.array([160, 94, 0])
+        upper_obj = np.array([179, 255, 255])
 
+        obj_mask = cv2.inRange(hsv, lower_obj, upper_obj)
+
+        k = 10
+        kernel = np.ones((k, k))
+        obj_mask = cv2.dilate(obj_mask, kernel, iterations=3)
+
+        mask = mask - obj_mask
+
+        # Canny edge detection
         thresh1 = cv2.getTrackbarPos("Thresh1", "Trackbar")
         thresh2 = cv2.getTrackbarPos("Thresh2", "Trackbar")
 
-        canny = cv2.Canny(blur, thresh1, thresh2)
+        canny = cv2.Canny(mask, thresh1, thresh2)
 
+        # Line detection using draw_lines()
         lines = np.zeros_like(frame)
         self.draw_lines(lines, canny)
 
         ksize2 = 10
         kernel = np.ones((ksize2, ksize2))
-        lines = cv2.dilate(lines, kernel, iterations=1)
+        lines = cv2.dilate(lines, kernel, iterations=4)
         lines = cv2.cvtColor(lines, cv2.COLOR_BGR2GRAY)
 
-        contours = self.get_contours(lines, frame)
-        self.find_squares(contours, frame)
+        curr_squares = self.get_contours(lines, frame)
+        self.find_squares(curr_squares, frame)
 
-        show_debug(frame, name="frame", wait=False)
-        # show_debug(lines, name="lines", wait=False)
-
-        return
+        # Displaying the frame
+        show_debug(mask, name="frame", wait=False)
 
     def get_contours(self, mask, frame):
-        """Detects squares by analyzing the contours of the frame"""
+        """Detects squares by analyzing the contours in the frame"""
 
         curr_squares = []  # Squares in the current frame
         contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Creating a copy of frame
+        cnt_frame = frame.copy()
 
         for cnt in contours:
             area = cv2.contourArea(cnt)
             approx = cv2.approxPolyDP(cnt, .01 * cv2.arcLength(cnt, True), True)
 
-            if self.frame_area * .03 < area < self.frame_area * .25:
-                # cv2.drawContours(frame, [approx], 0, (255, 0, 0), 5)
-
+            if self.frame_area * .04 < area < self.frame_area * .25:
                 # Check if the contour has 4 sides
                 if len(approx) == 4:
+                    cv2.drawContours(cnt_frame, [approx], 0, (255, 0, 0), 5)
+
                     x, y, w, h = cv2.boundingRect(approx)
 
                     # Check if sides are equal-ish lengths
                     dim_error = (abs(w - h)/w)  # Error between width and height
 
-                    if dim_error < .2:
+                    if dim_error < .18:
                         curr_squares.append(Square(x, y, w, h))
+
+        # show_debug(cnt_frame, name="contours", wait=False)
 
         return curr_squares
 
@@ -122,7 +142,7 @@ class GridMapper:
             for s1 in curr_squares:
                 for s2 in squares:
                     # If a detected square is similar to a square already being tracked, update the square's info
-                    if np.allclose([s1.x, s1.y, s1.w, s1.h], [s2.x, s2.y, s2.w, s2.h], atol=100):
+                    if np.allclose([s1.x, s1.y, s1.w, s1.h], [s2.x, s2.y, s2.w, s2.h], atol=130):
                         s2.x = s1.x
                         s2.y = s1.y
                         s2.w = s1.w
@@ -150,7 +170,7 @@ class GridMapper:
         # If a square is not visible for 20 consecutive frames, delete it
         for s in squares:
             if not s.visible:
-                if s.delete == 20:
+                if s.delete == 15:
                     squares.remove(s)
                 else:
                     s.delete += 1
