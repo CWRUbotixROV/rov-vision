@@ -47,6 +47,7 @@ def get_colors(image, clusters):
 
     clt = KMeans(n_clusters=clusters)
     clt.fit(image)
+
     centroids = clt.cluster_centers_
 
     hist = centroid_histogram(clt)
@@ -56,6 +57,4 @@ def get_colors(image, clusters):
     cv2.destroyAllWindows()
 
     return centroids
-
-
 
